@@ -159,8 +159,10 @@ tmp:TBierka;
 punkt:TPoint;
 i,j:integer;
 PozycjaKrola:TPoint;
+WszystkoOK:boolean;
 begin
 tmpBoard:=Board;
+WszystkoOK:=true;
 
 tmp:=tmpBoard[pole.X,pole.Y];
 tmpBoard[pole.X,pole.Y]:=nil;
@@ -171,7 +173,37 @@ for i:=1 to 8 do
 for j:=1 to 8 do
   if (tmpBoard[i,j].rodzaj='krol') and (tmpBoard[i,j].kolor='biale') then PozycjaKrola:=Point(i,j); 
   
+//Sprawdzamy w Poziomie w Prawo
+
+for i:=1 to 8 do
+  begin
   
+    if PozycjaKrola.Y+i>8 then begin Break; end
+    else
+    begin
+      
+      if tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].rodzaj='krol' then begin WszystkoOK:=false; Break; end; //sprawdzamy czy wchodzi pod krola
+      if (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].rodzaj='wieza') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; Break; end;
+      if (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; Break; end;
+    end;
+  
+  end;
+  
+//Sprawdzamy w Poziomie w Lewo
+
+for i:=1 to 8 do
+  begin
+  
+    if PozycjaKrola.Y-i<1 then begin Break; end
+    else
+    begin
+      
+      if tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i].rodzaj='krol' then begin WszystkoOK:=false; Break; end; //sprawdzamy czy wchodzi pod krola
+      if (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i].rodzaj='wieza') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; Break; end;
+      if (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; Break; end;
+    end;
+  
+  end;  
 
 
 //stworzenie roboczej tabeli i sprawdzenie czy po nowym ruchu nie bedzie atakowany bialy krol po ruchu buialych
