@@ -155,8 +155,11 @@ end;
 function TForm3.SprawdzKrolaBialego(pole:TPoint; na:string):boolean;
 var
 tmpBoard : array[1..8,1..8] of TBierka;
+tmp:TBierka;
+i,j:integer;
 begin
 tmpBoard:=Board;
+
 //stworzenie roboczej tabeli i sprawdzenie czy po nowym ruchu nie bedzie atakowany bialy krol po ruchu buialych
 end;
 
