@@ -149,7 +149,42 @@ for j:=1 to 8 do
   
 end;
 
+
 {---------}
+
+function TForm3.SprawdzRuch(Z:string, NA:string):boolean;
+var
+rodzaj:string;
+pole:TPoint;
+i,j:integer;
+ok:boolean;
+begin
+
+pole:=ZnajdzIJbyPole(Z);
+
+rodzaj:=Board[pole.X,pole.Y].rodzaj;
+
+if rodzaj='pion' then
+ok:=SprawdzRuchPiona(pole, NA);
+
+if rodzaj='wieza' then
+ok:=SprawdzRuchWiezy(pole, NA);
+
+if rodzaj='skoczek' then
+ok:=SprawdzRuchSkoczka(pole, NA);
+
+if rodzaj='goniec' then
+ok:=SprawdzRuchGonca(pole, NA);
+
+if rodzaj='hetman' then
+ok:=SprawdzRuchHetmana(pole, NA);
+
+if rodzaj='krol' then
+ok:=SprawdzRuchKrola(pole, NA);
+
+
+
+end;
 
 procedure TForm3.FormCreate(Sender: TObject);
 var
