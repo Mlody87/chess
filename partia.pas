@@ -138,6 +138,17 @@ begin
 Result:=Point(DaneBoard[i,j].X, DaneBoard[i,j].Y);
 end;
 
+function TForm3.ZnajdzIJbyPole(pole:string):TPoint;
+var
+i,j:integer;
+begin
+
+for i:=1 to 8 do
+for j:=1 to 8 do
+  if DaneBoard[i,j].pole=pole then Return:=Point(i,j);
+  
+end;
+
 {---------}
 
 procedure TForm3.FormCreate(Sender: TObject);
