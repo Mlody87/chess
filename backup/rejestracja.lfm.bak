@@ -1,0 +1,74 @@
+object FRejestracja: TFRejestracja
+  Left = 535
+  Height = 191
+  Top = 274
+  Width = 312
+  Caption = 'Rejestracja'
+  ClientHeight = 191
+  ClientWidth = 312
+  LCLVersion = '1.4.4.0'
+  object LLogin: TLabel
+    Left = 60
+    Height = 15
+    Top = 32
+    Width = 33
+    Caption = 'Login:'
+    ParentColor = False
+  end
+  object LHaslo: TLabel
+    Left = 60
+    Height = 15
+    Top = 66
+    Width = 33
+    Caption = 'Haslo:'
+    ParentColor = False
+  end
+  object Lemail: TLabel
+    Left = 56
+    Height = 15
+    Top = 98
+    Width = 37
+    Caption = 'E-mail:'
+    ParentColor = False
+  end
+  object ELogin: TEdit
+    Left = 124
+    Height = 23
+    Top = 24
+    Width = 120
+    TabOrder = 0
+  end
+  object EHaslo: TEdit
+    Left = 124
+    Height = 23
+    Top = 58
+    Width = 120
+    TabOrder = 1
+  end
+  object EEmail: TEdit
+    Left = 124
+    Height = 23
+    Top = 90
+    Width = 120
+    TabOrder = 2
+  end
+  object BRejestracja: TButton
+    Left = 124
+    Height = 25
+    Top = 136
+    Width = 75
+    Caption = 'Rejestracja'
+    OnClick = BRejestracjaClick
+    TabOrder = 3
+  end
+  object LErrorrejestracja: TLabel
+    Left = 127
+    Height = 1
+    Top = 166
+    Width = 1
+    Font.Color = clRed
+    Font.Style = [fsBold]
+    ParentColor = False
+    ParentFont = False
+  end
+end

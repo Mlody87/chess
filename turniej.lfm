@@ -1,0 +1,111 @@
+object Form2: TForm2
+  Left = 391
+  Height = 469
+  Top = 156
+  Width = 528
+  Caption = 'Form2'
+  ClientHeight = 469
+  ClientWidth = 528
+  OnCreate = FormCreate
+  LCLVersion = '1.4.4.0'
+  object Szczegoly: TGroupBox
+    Left = 8
+    Height = 200
+    Top = 8
+    Width = 232
+    Caption = 'Szczegoly'
+    ClientHeight = 180
+    ClientWidth = 228
+    TabOrder = 0
+    object LNazwa: TLabel
+      Left = 7
+      Height = 21
+      Top = 0
+      Width = 60
+      Caption = 'LNazwa'
+      Font.Height = -16
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+    object LOpis: TMemo
+      Left = 7
+      Height = 79
+      Top = 25
+      Width = 217
+      Color = 15724527
+      Lines.Strings = (
+        'LOpis'
+      )
+      ScrollBars = ssAutoVertical
+      TabOrder = 0
+    end
+    object LWpisowe: TLabel
+      Left = 8
+      Height = 15
+      Top = 112
+      Width = 54
+      Caption = 'LWpisowe'
+      ParentColor = False
+    end
+    object LPula: TLabel
+      Left = 8
+      Height = 15
+      Top = 131
+      Width = 29
+      Caption = 'LPula'
+      ParentColor = False
+    end
+    object LRundy: TLabel
+      Left = 136
+      Height = 15
+      Top = 112
+      Width = 40
+      Caption = 'LRundy'
+      ParentColor = False
+    end
+    object LGracze: TLabel
+      Left = 135
+      Height = 15
+      Top = 131
+      Width = 41
+      Caption = 'LGracze'
+      ParentColor = False
+    end
+    object LDystans: TLabel
+      Left = 9
+      Height = 15
+      Top = 151
+      Width = 47
+      Caption = 'LDystans'
+      ParentColor = False
+    end
+  end
+  object GroupBox1: TGroupBox
+    Left = 248
+    Height = 344
+    Top = 8
+    Width = 272
+    Caption = 'Lista graczy'
+    ClientHeight = 324
+    ClientWidth = 268
+    TabOrder = 1
+    object gracze_tabela: TStringGrid
+      Left = 6
+      Height = 320
+      Top = 0
+      Width = 260
+      FixedCols = 0
+      ScrollBars = ssVertical
+      TabOrder = 0
+    end
+  end
+  object GroupBox2: TGroupBox
+    Left = 7
+    Height = 136
+    Top = 216
+    Width = 233
+    Caption = 'Podzial nagrod'
+    TabOrder = 2
+  end
+end

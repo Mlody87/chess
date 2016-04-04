@@ -1,0 +1,620 @@
+unit Unit1;
+
+{$mode objfpc}{$H+}
+
+interface
+
+uses
+  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
+  Grids, lNetComponents, lNet, logowanie, rejestracja, turniej, fgl, logi, partia;
+
+type
+
+TUser=record
+  id:string;
+  user:string;
+  srodki:string;
+  ranking:string;
+  zalogowany:boolean;
+  end;
+
+TObrobka = class(TThread)
+  private
+    linia,s,tmp : string;
+    loger:TLogi;
+    procedure PokazKomunikat(kom:string);
+    procedure wyswietl_turnieje;
+    procedure P000; //rozpoczynanie logowania
+    procedure P001;  //pobieranie listy turniejow
+    procedure P002; //rejestracja
+    procedure P003; //logowanie
+    procedure P004; //rejestracja do turnieju - potwierdzenie
+    procedure P005; //zmiana liczby zarejestrowanych do turnieju - info z serwer
+    procedure P006; //wyrejestrowanie z turnieju - potwierdzenie
+    procedure P007; //lista turniejow do ktorych user jest zarejestrowany
+    procedure P008; //otrzymuje info o starcie turnieju
+    procedure P009; //lista uczestnikow turnieju
+    procedure P010; //start partii
+    procedure P011; //komunikaty do partii
+
+  protected
+    procedure Execute; override;
+  public
+    constructor Create(Counter : string);
+    procedure PokazFormeLogowania;
+  end;
+
+  { TForm1 }
+
+type TTurniej=record
+id:string;
+nazwa:string;
+opis:string;
+wpisowe:string;
+prowizja:string;
+dystans:string;
+max:string;
+zapisanych:string;
+start:string;
+stan:string;
+zakonczono:string;
+zapisany:string;
+pula:string;
+ile_rund:string;
+end;
+
+  TForm1 = class(TForm)
+    Button1: TButton;
+    BLogowanie: TButton;
+    BRejestracja: TButton;
+    Button2: TButton;
+    BZarWyr: TButton;
+    BWyloguj: TButton;
+    GTurniej: TGroupBox;
+    GUzytkownik: TGroupBox;
+    LZapisanych: TLabel;
+    LWpisowe: TLabel;
+    LNazwa: TLabel;
+    LRank: TLabel;
+    LRanking: TLabel;
+    LCash: TLabel;
+    klient: TLTCPComponent;
+    LUzytkownik: TLabel;
+    LSrodki: TLabel;
+    LLogin: TLabel;
+    Memo1: TMemo;
+    MOpis: TMemo;
+    turnieje_tabela: TStringGrid;
+    procedure BLogowanieClick(Sender: TObject);
+    procedure BRejestracjaClick(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
+    procedure BWylogujClick(Sender: TObject);
+    procedure BZarWyrClick(Sender: TObject);
+    procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
+    procedure FormCreate(Sender: TObject);
+    procedure klientConnect(aSocket: TLSocket);
+    procedure klientReceive(aSocket: TLSocket);
+    procedure turnieje_tabelaClick(Sender: TObject);
+    procedure wyswietl_daneuzytkownik;
+  private
+    { private declarations }
+  public
+    { public declarations }
+  end;
+
+  TTrwajacyTurniej = specialize TFPGMap<string,TForm2>;
+  TTrwajacaPartia = specialize TFPGMap<string,TForm3>;
+
+var
+  Form1: TForm1;
+  user:TUser;
+  turnieje:array of TTurniej;
+  TrwajaceTurnieje:TTrwajacyTurniej;
+  TrwajacePartie:TTrwajacaPartia;
+  idGniazda:string;
+
+implementation
+
+{$R *.lfm}
+
+{ TForm1 }
+
+procedure TObrobka.PokazKomunikat(kom:string);
+begin
+ShowMessage(kom);
+end;
+
+procedure TObrobka.PokazFormeLogowania;
+begin
+FLogowanie.Show;
+end;
+
+procedure TObrobka.wyswietl_turnieje;
+var
+i,ile:integer;
+begin
+
+for i:=1 to Form1.turnieje_tabela.RowCount-1 do
+Form1.turnieje_tabela.Rows[i].Clear;
+
+ile:=Form1.turnieje_tabela.RowCount;
+
+Form1.turnieje_tabela.RowCount:=ile+1;
+
+for i:=0 to Length(turnieje)-1 do
+begin
+    FOrm1.turnieje_tabela.Cells[0,i+1]:=turnieje[i].id;
+    FOrm1.turnieje_tabela.Cells[1,i+1]:=turnieje[i].nazwa;
+    FOrm1.turnieje_tabela.Cells[2,i+1]:=turnieje[i].wpisowe;
+    FOrm1.turnieje_tabela.Cells[3,i+1]:=turnieje[i].prowizja;
+    FOrm1.turnieje_tabela.Cells[4,i+1]:=turnieje[i].pula;
+    FOrm1.turnieje_tabela.Cells[5,i+1]:=turnieje[i].dystans;
+    FOrm1.turnieje_tabela.Cells[6,i+1]:=turnieje[i].ile_rund;
+    FOrm1.turnieje_tabela.Cells[7,i+1]:=turnieje[i].max;
+    FOrm1.turnieje_tabela.Cells[8,i+1]:=turnieje[i].zapisanych;
+    FOrm1.turnieje_tabela.Cells[9,i+1]:=turnieje[i].start;
+    FOrm1.turnieje_tabela.Cells[10,i+1]:=turnieje[i].stan;
+    FOrm1.turnieje_tabela.Cells[11,i+1]:=turnieje[i].zakonczono;
+
+end;
+
+end;
+
+procedure TObrobka.Execute;
+begin
+sleep(10);
+  FreeOnTerminate := True; // zwolnij po zakończeniu wątku
+
+tmp:=trim(linia);
+
+s:=LeftStr(tmp, 3);
+
+ if s = '000' then P000;
+ if s = '001' then P001;
+ if s = '002' then P002;
+ if s = '003' then P003;
+ if s = '004' then P004;
+ if s = '005' then P005;
+ if s = '006' then P006;
+ if s = '007' then P007;
+ if s = '008' then P008;
+ if s = '009' then P009;
+ if s = '010' then P010;
+ if s = '011' then P011;
+
+  end;
+
+procedure TObrobka.P011;
+var
+    odczyt:TStrings;
+begin
+ odczyt:=TStringList.Create;
+ ExtractStrings(['|'], [], PAnsiChar(tmp), odczyt);
+ Form1.Memo1.lines.add(odczyt[1]);
+
+  TrwajacePartie[odczyt[1]].komunikat(tmp);
+
+end;
+
+procedure TObrobka.P010;
+var
+    odczyt:TStrings;
+begin
+ odczyt:=TStringList.Create;
+ ExtractStrings(['|'], [], PAnsiChar(tmp), odczyt);
+
+ TrwajacePartie[odczyt[1]]:=TForm3.Create(Application);
+ TrwajacePartie[odczyt[1]].PrzekazDaneNaStart(tmp);
+ Synchronize(@TrwajacePartie[odczyt[1]].PokazForme);
+end;
+
+procedure TObrobka.P008;
+var
+    odczyt:TStrings;
+begin
+ odczyt:=TStringList.Create;
+ ExtractStrings(['|'], [], PAnsiChar(tmp), odczyt);
+
+ TrwajaceTurnieje[odczyt[2]]:=TForm2.Create(Application);
+ TrwajaceTurnieje[odczyt[2]].WypiszSzczegoly(odczyt[2]);
+ Synchronize(@TrwajaceTurnieje[odczyt[2]].PokazForme);
+
+end;
+
+procedure TObrobka.P009;
+var
+    odczyt:TStrings;
+begin
+ odczyt:=TStringList.Create;
+ ExtractStrings(['|'], [], PAnsiChar(tmp), odczyt);
+
+ Form1.Memo1.lines.add(tmp);
+
+ TrwajaceTurnieje[odczyt[1]].WypiszGraczy(tmp);
+
+end;
+
+procedure TObrobka.P000;
+var
+    odczyt:TStrings;
+begin
+ odczyt:=TStringList.Create;
+ ExtractStrings(['|'], [], PAnsiChar(tmp), odczyt);
+
+ idGniazda:=odczyt[1];
+
+ Synchronize(@PokazFormeLogowania);
+
+end;
+
+procedure TObrobka.P007;
+var
+    odczyt:TStrings;
+    i,j:integer;
+begin
+ odczyt:=TStringList.Create;
+ ExtractStrings(['|'], [], PAnsiChar(tmp), odczyt);
+
+ if odczyt.Count>1 then
+ begin
+
+for i:=1 to odczyt.Count-1 do
+begin
+   for j:=0 to Length(turnieje)-1 do
+       if odczyt[i] = turnieje[j].id then turnieje[j].zapisany:='1';
+end;
+
+  end;
+ end;
+
+
+procedure TObrobka.P005;
+var
+    odczyt:TStrings;
+    i,j:integer;
+begin
+ odczyt:=TStringList.Create;
+ ExtractStrings(['|'], [], PAnsiChar(tmp), odczyt);
+
+ Form1.memo1.lines.add('dostalem zmiane liczby zapisow');
+
+ for i:=0 to Length(turnieje)-1 do
+     if turnieje[i].id=odczyt[1] then
+     begin
+        turnieje[i].zapisanych:=odczyt[2];
+
+        for j:=1 to Form1.turnieje_tabela.RowCount do
+        begin
+          if Form1.turnieje_tabela.Cells[0,j]=odczyt[1] then begin Form1.turnieje_tabela.Cells[8,j]:=odczyt[2]; Break; end;
+        end;
+
+        Break;
+     end;
+
+
+
+end;
+
+procedure TObrobka.P006;
+var
+    odczyt:TStrings;
+    i:integer;
+begin
+ odczyt:=TStringList.Create;
+ ExtractStrings(['|'], [], PAnsiChar(tmp), odczyt);
+
+ FOrm1.memo1.lines.add('dostalem potwierdzenie wyrejestrowania');
+
+ if odczyt[1]='OK' then
+ begin
+    for i:=0 to Length(turnieje)-1 do
+    begin
+         if turnieje[i].id=odczyt[2] then
+         begin
+         turnieje[i].zapisany:='0';
+         Form1.memo1.lines.add('wyrejestrowano');
+         Break;
+         end;
+
+    end;
+ end;
+
+end;
+
+procedure TObrobka.P004;
+var
+    odczyt:TStrings;
+    i:integer;
+begin
+ odczyt:=TStringList.Create;
+ ExtractStrings(['|'], [], PAnsiChar(tmp), odczyt);
+
+ if odczyt[1]='OK' then
+ begin
+    for i:=0 to Length(turnieje)-1 do
+    begin
+         if turnieje[i].id=odczyt[2] then
+         begin
+         turnieje[i].zapisany:='1';
+       //  Synchronize(@PokazKomunikat('Zarejestrowany do turnieju'));    - TODO Komunikat o zarejestrowaniu
+       Form1.Memo1.Lines.Add('Zarejestrowany');
+       Break;
+         end;
+
+    end;
+
+ end
+ else
+ begin
+  //  Synchronize(@PokazKomunikat('Blad rejestracji'));
+ end;
+
+end;
+
+constructor TObrobka.Create(Counter: string);
+begin
+  inherited Create(False); // wywołanie wątku
+  linia := Counter; // przypisanie wartości do zmiennej
+  loger:=TLogi.Create;
+end;
+
+procedure TForm1.wyswietl_daneuzytkownik;
+begin
+
+if User.zalogowany = true then
+begin
+
+Form1.LUzytkownik.Visible:=true;
+Form1.LLogin.Visible:=true;
+Form1.LCash.Visible:=true;
+Form1.LSrodki.Visible:=true;
+Form1.BRejestracja.Visible:=false;
+Form1.LRanking.Visible:=true;
+FOrm1.LRank.Visible:=true;
+
+Form1.BWyloguj.Visible:=true;
+
+Form1.BLogowanie.Visible:=false;
+
+Form1.BZarWyr.Visible:=true;
+
+end
+else
+begin
+
+Form1.LUzytkownik.Visible:=false;
+Form1.LLogin.Visible:=false;
+Form1.LSrodki.Visible:=false;
+Form1.LCash.Visible:=false;
+Form1.BLogowanie.Visible:=true;
+Form1.LRanking.Visible:=false;
+FOrm1.LRank.Visible:=false;
+
+Form1.BWyloguj.Visible:=false;
+
+Form1.BRejestracja.Visible:=true;
+
+Form1.BZarWyr.Visible:=false;
+
+end;
+
+end;
+
+
+procedure TObrobka.P002;
+var
+    odczyt:TStrings;
+begin
+ odczyt:=TStringList.Create;
+ ExtractStrings(['|'], [], PAnsiChar(tmp), odczyt);
+
+ if (odczyt[1]='OK') and (odczyt[3]='OK') then
+ begin
+    ShowMessage('Rejestracja zakonczona pomyslnie!');
+    FRejestracja.Elogin.Text:='';
+    FRejestracja.Ehaslo.Text:='';
+    FRejestracja.EEmail.Text:='';
+    FRejestracja.Lerrorrejestracja.Caption:='';
+ end
+ else
+ begin
+ if odczyt[1]='jest' then FRejestracja.Lerrorrejestracja.Caption:='Podany login juz istnieje!';
+ if odczyt[3]='jest' then FRejestracja.Lerrorrejestracja.Caption:='Podany mail juz istnieje!';
+ end;
+
+
+end;
+
+
+procedure TObrobka.P001; //ODBIERANIE LISTY TURNIEJOW
+var
+    odczyt:TStrings;
+    numer:integer;
+    i:integer;
+begin
+ odczyt:=TStringList.Create;
+ ExtractStrings(['|'], [], PAnsiChar(tmp), odczyt);
+
+ for i:=0 to Length(turnieje)-1 do
+  if odczyt[1]=turnieje[i].id then exit;
+
+ numer:=length(turnieje)+1;
+  setlength(turnieje,numer);
+  numer:=numer-1;
+
+  turnieje[numer].id:=odczyt[1];
+  turnieje[numer].nazwa:=odczyt[2];
+  turnieje[numer].opis:=odczyt[3];
+  turnieje[numer].wpisowe:=odczyt[4];
+  turnieje[numer].prowizja:=odczyt[5];
+  turnieje[numer].dystans:=odczyt[6];
+  turnieje[numer].max:=odczyt[7];
+  turnieje[numer].zapisanych:=odczyt[8];
+  turnieje[numer].start:=odczyt[9];
+  turnieje[numer].stan:=odczyt[10];
+  turnieje[numer].zakonczono:=odczyt[11];
+  turnieje[numer].zapisany:='0';
+  turnieje[numer].pula:=odczyt[12];
+  turnieje[numer].ile_rund:=odczyt[13];
+
+  Synchronize(@wyswietl_turnieje);
+
+   odczyt.Free;
+end;
+
+
+procedure TObrobka.P003;
+var
+    odczyt:TStrings;
+begin
+ odczyt:=TStringList.Create;
+ ExtractStrings(['|'], [], PAnsiChar(tmp), odczyt);
+
+ if (odczyt[1]='brak') or (odczyt[2]='brak') then
+ begin
+    FLogowanie.LErrorlogowanie.Caption:='Bledy login lub haslo'; Exit;
+ end
+ else
+ begin
+    Form1.LUzytkownik.Caption:=FLogowanie.ELogin.Text;
+    Form1.LCash.Caption:=odczyt[3]+' PLN';
+    User.zalogowany:=true;
+    Form1.LRank.Caption:=odczyt[4];
+
+
+    User.id:=odczyt[5];
+    User.user:=FLogowanie.ELogin.Text;
+    User.srodki:=odczyt[3];
+    User.ranking:=odczyt[4];
+
+    Synchronize(@Form1.wyswietl_daneuzytkownik);
+
+    FLogowanie.Hide;
+
+ end;
+
+
+end;
+
+procedure TForm1.Button1Click(Sender: TObject);
+begin
+
+end;
+
+procedure TForm1.BLogowanieClick(Sender: TObject);
+begin
+  FLogowanie.Show;
+end;
+
+procedure TForm1.BRejestracjaClick(Sender: TObject);
+begin
+  FRejestracja.Show;
+end;
+
+procedure TForm1.Button2Click(Sender: TObject);
+begin
+  klient.SendMessage('008|dupa');
+end;
+
+procedure TForm1.BWylogujClick(Sender: TObject);
+begin
+  User.zalogowany:=false;
+  klient.SendMessage('003|'+user.id);
+  Form1.Close;
+end;
+
+procedure TForm1.BZarWyrClick(Sender: TObject);
+var
+    st:string;
+begin
+  if turnieje[turnieje_tabela.Selection.Top-1].zapisany='0' then
+  begin      //zarejestruj do turnieju
+     st:='004|'+user.id+'|'+user.user+'|'+turnieje[turnieje_tabela.Selection.Top-1].id;
+     klient.SendMessage(st);
+     Form1.memo1.lines.add(st);
+  end
+  else
+  begin     //wyrejestruj z turnieju
+     klient.SendMessage('006|'+user.id+'|'+user.user+'|'+turnieje[turnieje_tabela.Selection.Top-1].id);
+  end;
+
+end;
+
+procedure TForm1.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+begin
+  klient.SendMessage('003|'+user.id);
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+User.zalogowany:=false;
+BZarWyr.Visible:=false;
+
+TrwajaceTurnieje:=TTrwajacyTurniej.Create;
+TrwajacePartie:=TTrwajacaPartia.Create;
+
+turnieje_tabela.ColCount:=12;
+turnieje_tabela.RowCount:=1;
+turnieje_tabela.Cells[0,0]:='Id';
+turnieje_tabela.Cells[1,0]:='Nazwa';
+turnieje_tabela.Cells[2,0]:='Wpisowe';
+turnieje_tabela.Cells[3,0]:='Prowizja';
+turnieje_tabela.Cells[4,0]:='Pula';
+turnieje_tabela.Cells[5,0]:='Dystans';
+turnieje_tabela.Cells[6,0]:='Ilosc rund';
+turnieje_tabela.Cells[7,0]:='Max';
+turnieje_tabela.Cells[8,0]:='Zapisanych';
+turnieje_tabela.Cells[9,0]:='Start';
+turnieje_tabela.Cells[10,0]:='Stan';
+turnieje_tabela.Cells[11,0]:='Zakonczono';
+
+klient.Connect();
+end;
+
+procedure TForm1.klientConnect(aSocket: TLSocket);
+begin
+ // ShowMessage('Polaczony');
+end;
+
+procedure TForm1.klientReceive(aSocket: TLSocket);
+var msg : String;
+begin
+aSocket.GetMessage(msg);
+
+Form1.Memo1.Lines.add(msg);
+
+TObrobka.Create(msg);
+
+end;
+
+procedure TForm1.turnieje_tabelaClick(Sender: TObject);
+begin
+MOpis.Clear;
+LNazwa.Caption:=turnieje[turnieje_tabela.Selection.Top-1].nazwa;
+LWpisowe.caption:='Wpisowe: '+turnieje[turnieje_tabela.Selection.Top-1].wpisowe+'+'+turnieje[turnieje_tabela.Selection.Top-1].prowizja+' PLN';
+LZapisanych.Caption:=turnieje[turnieje_tabela.Selection.Top-1].zapisanych+'/'+turnieje[turnieje_tabela.Selection.Top-1].max;
+MOpis.Lines.Add(turnieje[turnieje_tabela.Selection.Top-1].opis);
+
+if user.zalogowany=true then
+begin
+BZarWyr.Visible:=true;
+
+ if turnieje[turnieje_tabela.Selection.Top-1].stan='oczekuje' then
+ begin
+    if turnieje[turnieje_tabela.Selection.Top-1].zapisany='0' then
+    begin
+        BZarWyr.Caption:='Zarejestruj';
+    end
+    else
+    begin
+        BZarWyr.Caption:='Wyrejestruj';
+    end;
+  end;
+end;
+end;
+
+
+
+end.
+

@@ -1,0 +1,48 @@
+unit logowanie;
+
+{$mode objfpc}{$H+}
+
+interface
+
+uses
+  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls;
+
+type
+
+  { TFLogowanie }
+
+  TFLogowanie = class(TForm)
+    BZaloguj: TButton;
+    EHaslo: TEdit;
+    ELogin: TEdit;
+    LErrorLogowanie: TLabel;
+    LHaslo: TLabel;
+    LLogin: TLabel;
+    procedure BZalogujClick(Sender: TObject);
+  private
+    { private declarations }
+  public
+    { public declarations }
+  end;
+
+var
+  FLogowanie: TFLogowanie;
+
+implementation
+
+uses Unit1;
+
+{$R *.lfm}
+
+{ TFLogowanie }
+
+procedure TFLogowanie.BZalogujClick(Sender: TObject);
+var
+  s:string;
+begin
+  s:='003|'+ELogin.Text+'|'+EHaslo.Text;
+  Form1.klient.SendMessage(s);
+end;
+
+end.
+

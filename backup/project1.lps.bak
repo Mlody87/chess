@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <PathDelim Value="\"/>
+    <Version Value="9"/>
+    <BuildModes Active="Default"/>
+    <Units Count="11">
+      <Unit0>
+        <Filename Value="project1.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="3"/>
+        <CursorPos Y="24"/>
+        <UsageCount Value="466"/>
+        <Loaded Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="unit1.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="Form1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="Unit1"/>
+        <EditorIndex Value="7"/>
+        <TopLine Value="549"/>
+        <CursorPos Y="551"/>
+        <UsageCount Value="466"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="logowanie.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="FLogowanie"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="29"/>
+        <CursorPos X="3" Y="43"/>
+        <UsageCount Value="463"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="rejestracja.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="FRejestracja"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <EditorIndex Value="5"/>
+        <CursorPos X="33" Y="46"/>
+        <UsageCount Value="461"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="turniej.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="Form2"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <EditorIndex Value="8"/>
+        <TopLine Value="16"/>
+        <CursorPos X="5" Y="58"/>
+        <UsageCount Value="84"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="partia.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="Form3"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="9"/>
+        <TopLine Value="338"/>
+        <CursorPos X="23" Y="360"/>
+        <UsageCount Value="23"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="logowanie.lfm"/>
+        <UsageCount Value="41"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="LFM"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="project1.lpi"/>
+        <EditorIndex Value="2"/>
+        <UsageCount Value="41"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="XML"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="rejestracja.lfm"/>
+        <EditorIndex Value="4"/>
+        <UsageCount Value="41"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="LFM"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="unit1.lfm"/>
+        <EditorIndex Value="6"/>
+        <UsageCount Value="41"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="LFM"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="logi.pas"/>
+        <EditorIndex Value="10"/>
+        <CursorPos X="31" Y="21"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit10>
+    </Units>
+    <JumpHistory Count="30" HistoryIndex="29">
+      <Position1>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="9" Column="82"/>
+      </Position1>
+      <Position2>
+        <Filename Value="partia.pas"/>
+        <Caret Line="38" Column="12" TopLine="19"/>
+      </Position2>
+      <Position3>
+        <Filename Value="partia.pas"/>
+        <Caret Line="48" Column="10" TopLine="38"/>
+      </Position3>
+      <Position4>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="183" Column="25" TopLine="182"/>
+      </Position4>
+      <Position5>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="192" TopLine="181"/>
+      </Position5>
+      <Position6>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="193" TopLine="181"/>
+      </Position6>
+      <Position7>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="195" TopLine="181"/>
+      </Position7>
+      <Position8>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="194" Column="28" TopLine="183"/>
+      </Position8>
+      <Position9>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="193" Column="79" TopLine="184"/>
+      </Position9>
+      <Position10>
+        <Filename Value="project1.lpr"/>
+        <Caret Line="10" Column="68"/>
+      </Position10>
+      <Position11>
+        <Filename Value="partia.pas"/>
+        <Caret Line="43" Column="23" TopLine="32"/>
+      </Position11>
+      <Position12>
+        <Filename Value="partia.pas"/>
+        <Caret Line="17" Column="18" TopLine="10"/>
+      </Position12>
+      <Position13>
+        <Filename Value="partia.pas"/>
+        <Caret Line="16" Column="18" TopLine="10"/>
+      </Position13>
+      <Position14>
+        <Filename Value="partia.pas"/>
+        <Caret Line="15" Column="18" TopLine="10"/>
+      </Position14>
+      <Position15>
+        <Filename Value="partia.pas"/>
+        <Caret Line="14" Column="24" TopLine="10"/>
+      </Position15>
+      <Position16>
+        <Filename Value="partia.pas"/>
+        <Caret Line="49" TopLine="26"/>
+      </Position16>
+      <Position17>
+        <Filename Value="partia.pas"/>
+        <Caret Line="51" TopLine="28"/>
+      </Position17>
+      <Position18>
+        <Filename Value="partia.pas"/>
+        <Caret Line="52" TopLine="29"/>
+      </Position18>
+      <Position19>
+        <Filename Value="partia.pas"/>
+        <Caret Line="53" TopLine="30"/>
+      </Position19>
+      <Position20>
+        <Filename Value="partia.pas"/>
+        <Caret Line="54" TopLine="31"/>
+      </Position20>
+      <Position21>
+        <Filename Value="partia.pas"/>
+        <Caret Line="55" TopLine="32"/>
+      </Position21>
+      <Position22>
+        <Filename Value="partia.pas"/>
+        <Caret Line="56" TopLine="33"/>
+      </Position22>
+      <Position23>
+        <Filename Value="partia.pas"/>
+        <Caret Line="58" Column="12" TopLine="48"/>
+      </Position23>
+      <Position24>
+        <Filename Value="partia.pas"/>
+        <Caret Line="257" Column="34" TopLine="232"/>
+      </Position24>
+      <Position25>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="209" Column="38" TopLine="21"/>
+      </Position25>
+      <Position26>
+        <Filename Value="partia.pas"/>
+        <Caret Line="263" TopLine="237"/>
+      </Position26>
+      <Position27>
+        <Filename Value="partia.pas"/>
+        <Caret Line="323" Column="14" TopLine="298"/>
+      </Position27>
+      <Position28>
+        <Filename Value="partia.pas"/>
+        <Caret Line="344" Column="3" TopLine="326"/>
+      </Position28>
+      <Position29>
+        <Filename Value="partia.pas"/>
+        <Caret Line="449" Column="8" TopLine="30"/>
+      </Position29>
+      <Position30>
+        <Filename Value="partia.pas"/>
+        <Caret Line="67" Column="35" TopLine="42"/>
+      </Position30>
+    </JumpHistory>
+  </ProjectSession>
+</CONFIG>
