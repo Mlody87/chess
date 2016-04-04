@@ -203,7 +203,23 @@ for i:=1 to 8 do
       if (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; Break; end;
     end;
   
-  end;  
+  end; 
+  
+  //Sprawdzamy po skosie w gore w prawo
+
+for i:=1 to 8 do
+  begin
+  
+    if (PozycjaKrola.X+i>8) or PozycjaKrola.Y+i>8 then begin Break; end
+    else
+    begin
+      
+      if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y+i].rodzaj='krol' then begin WszystkoOK:=false; Break; end; //sprawdzamy czy wchodzi pod krola
+      if (tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y+i].rodzaj='goniec') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; Break; end;
+      if (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; Break; end;
+    end;
+  
+  end;
 
 
 //stworzenie roboczej tabeli i sprawdzenie czy po nowym ruchu nie bedzie atakowany bialy krol po ruchu buialych
