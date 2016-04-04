@@ -158,6 +158,7 @@ tmpBoard : array[1..8,1..8] of TBierka;
 tmp:TBierka;
 punkt:TPoint;
 i,j:integer;
+PozycjaKrola:TPoint;
 begin
 tmpBoard:=Board;
 
@@ -165,6 +166,12 @@ tmp:=tmpBoard[pole.X,pole.Y];
 tmpBoard[pole.X,pole.Y]:=nil;
 punkt:=znajdzIJbyPole(na);
 tmpBoard[punkt.X,punkt.Y]:=tmp;
+
+for i:=1 to 8 do
+for j:=1 to 8 do
+  if (tmpBoard[i,j].rodzaj='krol') and (tmpBoard[i,j].kolor='biale') then PozycjaKrola:=Point(i,j); 
+  
+  
 
 
 //stworzenie roboczej tabeli i sprawdzenie czy po nowym ruchu nie bedzie atakowany bialy krol po ruchu buialych
