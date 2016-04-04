@@ -152,6 +152,16 @@ end;
 
 {---------}
 
+function TForm3.SprawdzKrolaBialego(pole:TPoint; na:string):boolean;
+begin
+//stworzenie roboczej tabeli i sprawdzenie czy po nowym ruchu nie bedzie atakowany bialy krol po ruchu buialych
+end;
+
+function TForm3.SprawdzKrolaCzarnego(pole:TPoint; na:string):boolean;
+begin
+//stworzenie roboczej tabeli i sprawdzenie czy po nowym ruchu nie bedzie atakowany czarny krol po ruchu czarnych
+end;
+
 function TForm3.SprawdzRuch(Z:string, NA:string):boolean;
 var
 rodzaj:string;
