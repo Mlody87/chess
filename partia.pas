@@ -335,10 +335,16 @@ pole:TPoint;
 i,j:integer;
 ok:boolean;
 begin
+ok:=true;
 
 pole:=ZnajdzIJbyPole(Z);
 
 rodzaj:=Board[pole.X,pole.Y].rodzaj;
+
+if GramKolorem='biale' then ok:=SprawdzKrolaBialego(pole, NA);
+if GramKolorem='czarne' then ok:=SprawdzKrolaCzarnego(pole, NA);
+
+if ok=false then begin Result:=false; Break; end;
 
 if rodzaj='pion' then
 ok:=SprawdzRuchPiona(pole, NA);
@@ -358,7 +364,7 @@ ok:=SprawdzRuchHetmana(pole, NA);
 if rodzaj='krol' then
 ok:=SprawdzRuchKrola(pole, NA);
 
-
+Result:=ok;
 
 end;
 
