@@ -169,8 +169,6 @@ tmpBoard[pole.X,pole.Y]:=nil;
 punkt:=znajdzIJbyPole(na);
 tmpBoard[punkt.X,punkt.Y]:=tmp;
 
-{TRZEBA TU WSZEDZIE SPRAWDZIC CZY NIE NIL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!}
-
 for i:=1 to 8 do
 for j:=1 to 8 do
   if TmpBoard[i,j]<>nil then begin if (tmpBoard[i,j].rodzaj='krol') and (tmpBoard[i,j].kolor='biale') then PozycjaKrola:=Point(i,j); end;
