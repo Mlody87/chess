@@ -323,8 +323,166 @@ end;
 function TForm3.SprawdzKrolaCzarnego(pole:TPoint; na:string):boolean;
 var
 tmpBoard : array[1..8,1..8] of TBierka;
+tmp:TBierka;
+punkt:TPoint;
+i,j:integer;
+PozycjaKrola:TPoint;
+WszystkoOK:boolean;
 begin
 tmpBoard:=Board;
+WszystkoOK:=true;
+
+tmp:=tmpBoard[pole.X,pole.Y];
+tmpBoard[pole.X,pole.Y]:=nil;
+punkt:=znajdzIJbyPole(na);
+tmpBoard[punkt.X,punkt.Y]:=tmp;
+
+for i:=1 to 8 do
+for j:=1 to 8 do
+  if TmpBoard[i,j]<>nil then begin if (tmpBoard[i,j].rodzaj='krol') and (tmpBoard[i,j].kolor='czarne') then PozycjaKrola:=Point(i,j); end;
+ 
+ 
+ //Sprawdzamy w pionie w gore
+
+for i:=1 to 8 do
+  begin
+  
+    if PozycjaKrola.X-i<1 then begin Break; end
+    else
+    begin
+      
+    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y]<>nil then begin  if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y].rodzaj='krol' then begin WszystkoOK:=false; Break; end; end; //sprawdzamy czy wchodzi pod krola
+    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y]<>nil then begin  if (tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y].rodzaj='wieza') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
+    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y]<>nil then begin  if (tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
+    end;
+  
+  end;
+  
+   //Sprawdzamy w pionie w dol
+
+for i:=1 to 8 do
+  begin
+  
+    if PozycjaKrola.X+i>8 then begin Break; end
+    else
+    begin
+      
+    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y]<>nil then begin  if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y].rodzaj='krol' then begin WszystkoOK:=false; Break; end; end; //sprawdzamy czy wchodzi pod krola
+    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y]<>nil then begin  if (tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y].rodzaj='wieza') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
+    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y]<>nil then begin  if (tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
+    end;
+  
+  end;
+ 
+  
+//Sprawdzamy w Poziomie w Prawo
+
+for i:=1 to 8 do
+  begin
+  
+    if PozycjaKrola.Y+i>8 then begin Break; end
+    else
+    begin
+      
+    if tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i]<>nil then begin  if tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].rodzaj='krol' then begin WszystkoOK:=false; Break; end; end; //sprawdzamy czy wchodzi pod krola
+    if tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i]<>nil then begin  if (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].rodzaj='wieza') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
+    if tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i]<>nil then begin  if (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
+    end;
+  
+  end;
+  
+//Sprawdzamy w Poziomie w Lewo
+
+for i:=1 to 8 do
+  begin
+  
+    if PozycjaKrola.Y-i<1 then begin Break; end
+    else
+    begin
+      
+    if tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i]<>nil then begin  if tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i].rodzaj='krol' then begin WszystkoOK:=false; Break; end; end;//sprawdzamy czy wchodzi pod krola
+    if tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i]<>nil then begin  if (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i].rodzaj='wieza') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
+    if tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i]<>nil then begin  if (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
+    end;
+  
+  end; 
+  
+  //Sprawdzamy po skosie w dol w prawo
+
+for i:=1 to 8 do
+  begin
+  
+    if (PozycjaKrola.X+i>8) or PozycjaKrola.Y+i>8 then begin Break; end
+    else
+    begin
+      
+    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y+i]<>nil then begin  if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y+i].rodzaj='krol' then begin WszystkoOK:=false; Break; end; end;//sprawdzamy czy wchodzi pod krola
+    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y+i]<>nil then begin  if (tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y+i].rodzaj='goniec') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
+    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y+i]<>nil then begin if (tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y+i].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
+    end;
+  
+  end;
+  
+    //Sprawdzamy po skosie w gore w prawo
+
+for i:=1 to 8 do
+  begin
+  
+    if (PozycjaKrola.X-i<1) or PozycjaKrola.Y+i>8 then begin Break; end
+    else
+    begin
+      
+    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y+i]<>nil then begin  if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y+i].rodzaj='krol' then begin WszystkoOK:=false; Break; end; end;//sprawdzamy czy wchodzi pod krola
+    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y+i]<>nil then begin  if (tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y+i].rodzaj='goniec') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
+    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y+i]<>nil then begin  if (tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y+i].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
+    end;
+  
+  end;
+  
+      //Sprawdzamy po skosie w dol w lewo
+
+for i:=1 to 8 do
+  begin
+  
+    if (PozycjaKrola.X+i>8) or PozycjaKrola.Y-i<1 then begin Break; end
+    else
+    begin
+      
+    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y-i]<>nil then begin  if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y-i].rodzaj='krol' then begin WszystkoOK:=false; Break; end; end;//sprawdzamy czy wchodzi pod krola
+    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y-i]<>nil then begin  if (tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y-i].rodzaj='goniec') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
+    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y-i]<>nil then begin  if (tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y-i].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
+    end;
+  
+  end;
+  
+        //Sprawdzamy po skosie w gore w lewo
+
+for i:=1 to 8 do
+  begin
+  
+    if (PozycjaKrola.X-i<1) or PozycjaKrola.Y-i<1 then begin Break; end
+    else
+    begin
+      
+    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y-i]<>nil then begin  if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y-i].rodzaj='krol' then begin WszystkoOK:=false; Break; end; end;//sprawdzamy czy wchodzi pod krola
+    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y-i]<>nil then begin  if (tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y-i].rodzaj='goniec') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
+    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y-i]<>nil then begin  if (tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y-i].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
+    end;
+  
+  end;
+  
+//sprawdzamy czy nie atakuje skoczek
+
+if (tmpBoard[PozycjaKrola.X+1, PozycjaKrola.Y+2]<>nil then begin if (tmpBoard[PozycjaKrola.X+1, PozycjaKrola.Y+2].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; end; end;
+if (tmpBoard[PozycjaKrola.X-1, PozycjaKrola.Y-2]<>nil then begin if (tmpBoard[PozycjaKrola.X-1, PozycjaKrola.Y+2].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; end; end;
+if (tmpBoard[PozycjaKrola.X+2, PozycjaKrola.Y+1]<>nil then begin if (tmpBoard[PozycjaKrola.X+2, PozycjaKrola.Y+1].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; end; end;
+if (tmpBoard[PozycjaKrola.X-2, PozycjaKrola.Y+1]<>nil then begin if (tmpBoard[PozycjaKrola.X-2, PozycjaKrola.Y+1].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; end; end;
+if (tmpBoard[PozycjaKrola.X+1, PozycjaKrola.Y-2]<>nil then begin if (tmpBoard[PozycjaKrola.X+1, PozycjaKrola.Y-2].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; end; end;
+if (tmpBoard[PozycjaKrola.X-1, PozycjaKrola.Y-2]<>nil then begin if (tmpBoard[PozycjaKrola.X-1, PozycjaKrola.Y-2].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; end; end;
+if (tmpBoard[PozycjaKrola.X+2, PozycjaKrola.Y-1]<>nil then begin if (tmpBoard[PozycjaKrola.X+2, PozycjaKrola.Y-1].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; end; end;
+if (tmpBoard[PozycjaKrola.X-2, PozycjaKrola.Y-1]<>nil then begin if (tmpBoard[PozycjaKrola.X-2, PozycjaKrola.Y-1].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; end; end;  
+
+Result:=WszystkoOK;
 //stworzenie roboczej tabeli i sprawdzenie czy po nowym ruchu nie bedzie atakowany czarny krol po ruchu czarnych
 end;
 
