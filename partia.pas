@@ -169,6 +169,8 @@ tmpBoard[pole.X,pole.Y]:=nil;
 punkt:=znajdzIJbyPole(na);
 tmpBoard[punkt.X,punkt.Y]:=tmp;
 
+{TRZEBA TU WSZEDZIE SPRAWDZIC CZY NIE NIL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!}
+
 for i:=1 to 8 do
 for j:=1 to 8 do
   if (tmpBoard[i,j].rodzaj='krol') and (tmpBoard[i,j].kolor='biale') then PozycjaKrola:=Point(i,j); 
@@ -268,7 +270,17 @@ for i:=1 to 8 do
     end;
   
   end;
+  
+//sprawdzamy czy nie atakuje skoczek
 
+ if (tmpBoard[PozycjaKrola.X+1, PozycjaKrola.Y+2].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; end;
+ if (tmpBoard[PozycjaKrola.X-1, PozycjaKrola.Y+2].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; end;
+ if (tmpBoard[PozycjaKrola.X+2, PozycjaKrola.Y+1].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; end;
+ if (tmpBoard[PozycjaKrola.X-2, PozycjaKrola.Y+1].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; end;
+ if (tmpBoard[PozycjaKrola.X+1, PozycjaKrola.Y-2].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; end;
+ if (tmpBoard[PozycjaKrola.X-1, PozycjaKrola.Y-2].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; end;
+ if (tmpBoard[PozycjaKrola.X+2, PozycjaKrola.Y-1].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; end;
+ if (tmpBoard[PozycjaKrola.X-2, PozycjaKrola.Y-1].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; end;       
 
 //stworzenie roboczej tabeli i sprawdzenie czy po nowym ruchu nie bedzie atakowany bialy krol po ruchu buialych
 end;
