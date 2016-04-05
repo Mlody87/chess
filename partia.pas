@@ -174,6 +174,40 @@ tmpBoard[punkt.X,punkt.Y]:=tmp;
 for i:=1 to 8 do
 for j:=1 to 8 do
   if TmpBoard[i,j]<>nil then begin if (tmpBoard[i,j].rodzaj='krol') and (tmpBoard[i,j].kolor='biale') then PozycjaKrola:=Point(i,j); end;
+ 
+ 
+ //Sprawdzamy w pionie w gore
+
+for i:=1 to 8 do
+  begin
+  
+    if PozycjaKrola.X-i<1 then begin Break; end
+    else
+    begin
+      
+    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y]<>nil then begin  if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y].rodzaj='krol' then begin WszystkoOK:=false; Break; end; end; //sprawdzamy czy wchodzi pod krola
+    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y]<>nil then begin  if (tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y].rodzaj='wieza') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; Break; end; end;
+    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y]<>nil then begin  if (tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; Break; end; end;
+    end;
+  
+  end;
+  
+   //Sprawdzamy w pionie w dol
+
+for i:=1 to 8 do
+  begin
+  
+    if PozycjaKrola.X+i>8 then begin Break; end
+    else
+    begin
+      
+    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y]<>nil then begin  if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y].rodzaj='krol' then begin WszystkoOK:=false; Break; end; end; //sprawdzamy czy wchodzi pod krola
+    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y]<>nil then begin  if (tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y].rodzaj='wieza') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; Break; end; end;
+    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y]<>nil then begin  if (tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; Break; end; end;
+    end;
+  
+  end;
+ 
   
 //Sprawdzamy w Poziomie w Prawo
 
