@@ -152,7 +152,7 @@ end;
 
 {---------}
 
-function TForm3.SprawdzKrolaBialego(pole:TPoint; na:string):boolean;
+function TForm3.SprawdzKrolaBialego(pole:TPoint; na:string):boolean; //true - nie atakowany, false - atakowany
 var
 tmpBoard : array[1..8,1..8] of TBierka;
 tmp:TBierka;
@@ -283,6 +283,9 @@ for i:=1 to 8 do
  if (tmpBoard[PozycjaKrola.X-2, PozycjaKrola.Y-1].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne') then begin WszystkoOK:=false; end;       
 
 //stworzenie roboczej tabeli i sprawdzenie czy po nowym ruchu nie bedzie atakowany bialy krol po ruchu buialych
+
+Result:=WszystkoOK;
+
 end;
 
 function TForm3.SprawdzKrolaCzarnego(pole:TPoint; na:string):boolean;
