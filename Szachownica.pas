@@ -40,7 +40,8 @@ type
   end;
 
   TRuch = record
-    figura:string;  
+    figura:string; 
+    kolor:string;
     Z:string;
     NA:string;
     uwagi:string;
@@ -229,6 +230,7 @@ pole:=ZnajdzIJbyPole(Z);
 
 SetLength(PrzebiegPartii, Length(PrzebiegPartii)+1);
 PrzebiegPartii[High(PrzebiegPartii)].figura:=Board[pole.X, pole.Y].rodzaj;
+PrzebiegPartii[High(PrzebiegPartii)].figura:=Board[pole.X, pole.Y].kolor;
 PrzebiegPartii[High(PrzebiegPartii)].Z:=Z;
 PrzebiegPartii[High(PrzebiegPartii)].NA:=Na;
 PrzebiegPartii[High(PrzebiegPartii)].uwagi:=Uwagi;
