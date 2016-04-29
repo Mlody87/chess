@@ -40,6 +40,7 @@ type
   end;
 
   TRuch = record
+    figura:string;  
     Z:string;
     NA:string;
     uwagi:string;
@@ -221,9 +222,13 @@ end;
 end;
 
 function TForm1.ZapiszRuch(Z,Na,Uwagi:string):boolean;
+var
+pole:TPoint;
 begin
+pole:=ZnajdzIJbyPole(Z);
 
 SetLength(PrzebiegPartii, Length(PrzebiegPartii)+1);
+PrzebiegPartii[High(PrzebiegPartii)].figura:=Board[pole.X, pole.Y].rodzaj;
 PrzebiegPartii[High(PrzebiegPartii)].Z:=Z;
 PrzebiegPartii[High(PrzebiegPartii)].NA:=Na;
 PrzebiegPartii[High(PrzebiegPartii)].uwagi:=Uwagi;
