@@ -205,19 +205,29 @@ end;
 
 function TForm1.OdswiezPrzebieg:boolean;
 var
-i:integer;
+i,j:integer;
 begin
-
 for i:=1 to Przebieg.RowCount-1 do
 Przebieg.Rows[i].Clear;
 
 Przebieg.RowCount:=Przebieg.RowCount+1;
 
+
 for i:=0 to Length(PrzebiegPartii)-1 do
 begin
     Przebieg.Cells[0,i]:=IntToStr(i+1);
-    Przebieg.Cells[1,i]:=PrzebiegPartii[i].Z;
-    Przebieg.Cells[2,i]:=PrzebiegPartii[i].Na;
+
+//dodajemy ruch jezeli biale    
+    if PrzebiegPartii[i].kolor='biale' then
+    begin
+    Przebieg.Cells[1,i]:=PrzebiegPartii[i].Z+''+PrzebiegPartii[i].Na; 
+    end;
+//dodajemy ruch jak czarne    
+    if PrzebiegPartii[i].kolor='czarne' then
+    begin
+    Przebieg.Cells[2,i-1]:=PrzebiegPartii[i].Z+''+PrzebiegPartii[i].Na;
+    end;    
+    
 end;
 
 end;
