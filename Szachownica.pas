@@ -1780,6 +1780,14 @@ okRuch:=false;
  if DAD then
  begin
 
+if ZnajdzPolebyXY[X,Y]=DaneBoard[PolePlansza.X,PolePlansza.Y].pole then
+begin
+  DadBierka^.pole:=DaneBoard[PolePlansza.X, PolePlansza.Y].pole;
+  DadBierka^.pozycja := ZnajdzXYbyPole(DadBierka^.pole);
+  DAD:=false;
+  SetLength(TablicaRuchow, 0);
+  Exit;
+end;
 
   DadBierka^.pole:=ZnajdzPolebyXY(X,Y);
   DadBierka^.pozycja := ZnajdzXYbyPole(ZnajdzPolebyXY(X,Y));
