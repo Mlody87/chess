@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-  StdCtrls, Grids, types;
+  StdCtrls, Grids, types, StrUtils;
 
 type
 
@@ -40,11 +40,18 @@ type
   end;
 
   TRuch = record
-    figura:string; 
-    kolor:string;
-    Z:string;
-    NA:string;
-    uwagi:string;
+     figura:string;
+     kolor:string;
+     Z:string;
+     NA:string;
+     uwagi:string;
+   end;
+
+  TWPrzelocie = record
+     ok:boolean;
+     Z:string;
+     NA:string;
+     bite:string;
   end;
 
   TMapaRuchow=array of string;
@@ -73,7 +80,7 @@ type
     function SprawdzKrolaCzarnego(pole:TPoint; na:string):boolean;
     function MozliweRuchy(WyjsciowePole:string):TMapaRuchow;
     function CzyLegalnyRuch(NaPole:string):boolean;
-    function ZapiszRuch(Z,Na,Uwagi:string):boolean;
+    function ZapiszRuch(Z,Na,rodzaj,kolor,Uwagi:string):boolean;
     function OdswiezPrzebieg:boolean;
     function WykonajRuch(Z,Na,Uwagi:string):boolean;
   private
@@ -115,6 +122,7 @@ var
   PunktPlansza,PolePlansza:TPoint;
 
   KogoRuch:string;
+  MozliweWPrzelocie:TWPrzelocie;
 
   KolorowanieRuchu:TKolorowanieRuchu;
   KolorowanieKrola:TKolorowanieKrola;
@@ -197,7 +205,7 @@ KolorowanieRuchu.ok:=true;
 KolorowanieRuchu.Z:=ZnajdzIJbyPole(Z);
 KolorowanieRuchu.NA:=ZnajdzIJbyPole(Na);
 
-ZapiszRuch(Z,Na,'');
+ZapiszRuch(Z,Na,Board[b.x,b.y].rodzaj,Board[b.x,b.y].kolor,'');
 
 PaintBox1.Invalidate;
 
@@ -205,42 +213,43 @@ end;
 
 function TForm1.OdswiezPrzebieg:boolean;
 var
-i,j:integer;
+i,j,licznik:integer;
+s:string;
 begin
-for i:=1 to Przebieg.RowCount-1 do
-Przebieg.Rows[i].Clear;
+//for i:=0 to Przebieg.RowCount-1 do
+//Przebieg.Rows[i].Clear;
 
-Przebieg.RowCount:=Przebieg.RowCount+1;
-
+licznik:=0;
 
 for i:=0 to Length(PrzebiegPartii)-1 do
 begin
-    Przebieg.Cells[0,i]:=IntToStr(i+1);
-
-//dodajemy ruch jezeli biale    
+//dodajemy ruch jezeli biale
     if PrzebiegPartii[i].kolor='biale' then
     begin
-    Przebieg.Cells[1,i]:=PrzebiegPartii[i].Z+''+PrzebiegPartii[i].Na; 
+         s:='';
+    Przebieg.RowCount:=licznik+1;
+    Przebieg.Cells[0,licznik]:=IntToStr(licznik+1);
+    if PrzebiegPartii[i].figura<>'pion' then s:=UpperCase(LeftStr(PrzebiegPartii[i].figura, 1));
+    Przebieg.Cells[1,licznik]:=s+''+PrzebiegPartii[i].Z+''+PrzebiegPartii[i].Na;
     end;
-//dodajemy ruch jak czarne    
+//dodajemy ruch jak czarne
     if PrzebiegPartii[i].kolor='czarne' then
     begin
-    Przebieg.Cells[2,i-1]:=PrzebiegPartii[i].Z+''+PrzebiegPartii[i].Na;
-    end;    
-    
+    s:='';
+    if PrzebiegPartii[i].figura<>'pion' then s:=UpperCase(LeftStr(PrzebiegPartii[i].figura, 1));
+    Przebieg.Cells[2,licznik]:=s+''+PrzebiegPartii[i].Z+''+PrzebiegPartii[i].Na;
+    licznik:=licznik+1;
+    end;
 end;
 
 end;
 
-function TForm1.ZapiszRuch(Z,Na,Uwagi:string):boolean;
-var
-pole:TPoint;
+function TForm1.ZapiszRuch(Z,Na,rodzaj,kolor,Uwagi:string):boolean;
 begin
-pole:=ZnajdzIJbyPole(Z);
 
 SetLength(PrzebiegPartii, Length(PrzebiegPartii)+1);
-PrzebiegPartii[High(PrzebiegPartii)].figura:=Board[pole.X, pole.Y].rodzaj;
-PrzebiegPartii[High(PrzebiegPartii)].figura:=Board[pole.X, pole.Y].kolor;
+PrzebiegPartii[High(PrzebiegPartii)].figura:=rodzaj;
+PrzebiegPartii[High(PrzebiegPartii)].kolor:=kolor;
 PrzebiegPartii[High(PrzebiegPartii)].Z:=Z;
 PrzebiegPartii[High(PrzebiegPartii)].NA:=Na;
 PrzebiegPartii[High(PrzebiegPartii)].uwagi:=Uwagi;
@@ -381,7 +390,7 @@ if bierka = 'wieza' then
 
 {SPRAWDZAMY MOZLIWE RUCHY DLA PIONA}   //bedzie sprawdzanie tylko dla gracza na dole    !!!
                                        //ale teraz musi byc tez dla czarnych!!!!!!!
-if bierka = 'pion' then        //dorobic potem bicie w przelocie
+if bierka = 'pion' then
  begin
       {sprawdzamy ruch piona}
 
@@ -430,6 +439,424 @@ if bierka = 'pion' then        //dorobic potem bicie w przelocie
              end;
          end;
      end;
+
+     {-- bicie w przelocie dla bialych --}
+
+     if (DaneBoard[pole.X,pole.Y].pole = 'A5') or
+        (DaneBoard[pole.X,pole.Y].pole = 'B5') or
+        (DaneBoard[pole.X,pole.Y].pole = 'C5') or
+        (DaneBoard[pole.X,pole.Y].pole = 'D5') or
+        (DaneBoard[pole.X,pole.Y].pole = 'E5') or
+        (DaneBoard[pole.X,pole.Y].pole = 'F5') or
+        (DaneBoard[pole.X,pole.Y].pole = 'G5') or
+        (DaneBoard[pole.X,pole.Y].pole = 'H5') then
+        begin
+           if (DaneBoard[pole.X,pole.Y].pole = 'A5') then
+              begin
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='B7') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='B5') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='B6';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='B5';
+                  MozliweWPrzelocie.Z:='A5';
+                  MozliweWPrzelocie.Na:='B6';
+                 end;
+
+              end;
+
+           if (DaneBoard[pole.X,pole.Y].pole = 'H5') then
+              begin
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='G7') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='G5') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='G6';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='G5';
+                  MozliweWPrzelocie.Z:='H5';
+                  MozliweWPrzelocie.Na:='G6';
+                 end;
+
+              end;
+
+           if (DaneBoard[pole.X,pole.Y].pole = 'B5') then
+              begin
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='A7') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='A5') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='A6';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='A5';
+                  MozliweWPrzelocie.Z:='B5';
+                  MozliweWPrzelocie.Na:='A6';
+                 end;
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='C7') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='C5') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='C6';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='C5';
+                  MozliweWPrzelocie.Z:='B5';
+                  MozliweWPrzelocie.Na:='C6';
+                 end;
+
+              end;
+
+           if (DaneBoard[pole.X,pole.Y].pole = 'C5') then
+              begin
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='B7') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='B5') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='B6';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='B5';
+                  MozliweWPrzelocie.Z:='C5';
+                  MozliweWPrzelocie.Na:='B6';
+                 end;
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='D7') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='D5') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='D6';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='D5';
+                  MozliweWPrzelocie.Z:='C5';
+                  MozliweWPrzelocie.Na:='D6';
+                 end;
+
+              end;
+
+           if (DaneBoard[pole.X,pole.Y].pole = 'D5') then
+              begin
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='C7') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='C5') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='C6';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='C5';
+                  MozliweWPrzelocie.Z:='D5';
+                  MozliweWPrzelocie.Na:='C6';
+                 end;
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='E7') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='E5') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='E6';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='E5';
+                  MozliweWPrzelocie.Z:='D5';
+                  MozliweWPrzelocie.Na:='E6';
+                 end;
+
+              end;
+
+           if (DaneBoard[pole.X,pole.Y].pole = 'E5') then
+              begin
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='D7') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='D5') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='D6';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='D5';
+                  MozliweWPrzelocie.Z:='E5';
+                  MozliweWPrzelocie.Na:='D6';
+                 end;
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='F7') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='F5') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='F6';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='F5';
+                  MozliweWPrzelocie.Z:='E5';
+                  MozliweWPrzelocie.Na:='F6';
+                 end;
+
+              end;
+
+           if (DaneBoard[pole.X,pole.Y].pole = 'F5') then
+              begin
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='E7') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='E5') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='E6';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='E5';
+                  MozliweWPrzelocie.Z:='F5';
+                  MozliweWPrzelocie.Na:='E6';
+                 end;
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='G7') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='G5') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='G6';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='G5';
+                  MozliweWPrzelocie.Z:='F5';
+                  MozliweWPrzelocie.Na:='G6';
+                 end;
+
+              end;
+
+           if (DaneBoard[pole.X,pole.Y].pole = 'G5') then
+                         begin
+                            if (PrzebiegPartii[High(PrzebiegPartii)].Z='F7') and
+                               (PrzebiegPartii[High(PrzebiegPartii)].NA='F5') and
+                               (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                            begin
+                             SetLength(ruchy, Length(ruchy)+1);
+                             ruchy[High(ruchy)]:='F6';
+                             MozliweWPrzelocie.ok:=true;
+                             MozliweWPrzelocie.bite:='F5';
+                             MozliweWPrzelocie.Z:='G5';
+                             MozliweWPrzelocie.Na:='F6';
+                            end;
+                            if (PrzebiegPartii[High(PrzebiegPartii)].Z='H7') and
+                               (PrzebiegPartii[High(PrzebiegPartii)].NA='H5') and
+                               (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                            begin
+                             SetLength(ruchy, Length(ruchy)+1);
+                             ruchy[High(ruchy)]:='H6';
+                             MozliweWPrzelocie.ok:=true;
+                             MozliweWPrzelocie.bite:='H5';
+                             MozliweWPrzelocie.Z:='G5';
+                             MozliweWPrzelocie.Na:='H6';
+                            end;
+
+                         end;
+
+        end;
+
+     {-- konczymy sprawdzanie bicie w przelocie dla bialych--}
+
+          {-- bicie w przelocie dla czarnych --}
+
+     if (DaneBoard[pole.X,pole.Y].pole = 'A4') or
+        (DaneBoard[pole.X,pole.Y].pole = 'B4') or
+        (DaneBoard[pole.X,pole.Y].pole = 'C4') or
+        (DaneBoard[pole.X,pole.Y].pole = 'D4') or
+        (DaneBoard[pole.X,pole.Y].pole = 'E4') or
+        (DaneBoard[pole.X,pole.Y].pole = 'F4') or
+        (DaneBoard[pole.X,pole.Y].pole = 'G4') or
+        (DaneBoard[pole.X,pole.Y].pole = 'H4') then
+        begin
+           if (DaneBoard[pole.X,pole.Y].pole = 'A4') then
+              begin
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='B2') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='B4') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='B3';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='B4';
+                  MozliweWPrzelocie.Z:='A4';
+                  MozliweWPrzelocie.Na:='B3';
+                 end;
+
+              end;
+
+           if (DaneBoard[pole.X,pole.Y].pole = 'H4') then
+              begin
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='G2') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='G4') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='G3';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='G4';
+                  MozliweWPrzelocie.Z:='H4';
+                  MozliweWPrzelocie.Na:='G3';
+                 end;
+
+              end;
+
+           if (DaneBoard[pole.X,pole.Y].pole = 'B4') then
+              begin
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='A2') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='A4') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='A3';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='A4';
+                  MozliweWPrzelocie.Z:='B4';
+                  MozliweWPrzelocie.Na:='A3';
+                 end;
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='C2') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='C4') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='C3';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='C4';
+                  MozliweWPrzelocie.Z:='B4';
+                  MozliweWPrzelocie.Na:='C3';
+                 end;
+
+              end;
+
+           if (DaneBoard[pole.X,pole.Y].pole = 'C4') then
+              begin
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='B2') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='B4') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='B3';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='B4';
+                  MozliweWPrzelocie.Z:='C4';
+                  MozliweWPrzelocie.Na:='B3';
+                 end;
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='D2') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='D4') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='D3';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='D4';
+                  MozliweWPrzelocie.Z:='C4';
+                  MozliweWPrzelocie.Na:='D3';
+                 end;
+
+              end;
+
+           if (DaneBoard[pole.X,pole.Y].pole = 'D4') then
+              begin
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='C2') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='C4') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='C3';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='C4';
+                  MozliweWPrzelocie.Z:='D4';
+                  MozliweWPrzelocie.Na:='C3';
+                 end;
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='E2') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='E4') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='E3';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='E4';
+                  MozliweWPrzelocie.Z:='D4';
+                  MozliweWPrzelocie.Na:='E3';
+                 end;
+
+              end;
+
+           if (DaneBoard[pole.X,pole.Y].pole = 'E4') then
+              begin
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='D2') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='D4') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='D3';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='D4';
+                  MozliweWPrzelocie.Z:='E4';
+                  MozliweWPrzelocie.Na:='D3';
+                 end;
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='F2') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='F4') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='F3';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='F4';
+                  MozliweWPrzelocie.Z:='E4';
+                  MozliweWPrzelocie.Na:='F3';
+                 end;
+
+              end;
+
+           if (DaneBoard[pole.X,pole.Y].pole = 'F4') then
+              begin
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='E2') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='E4') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='E3';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='E4';
+                  MozliweWPrzelocie.Z:='F4';
+                  MozliweWPrzelocie.Na:='E3';
+                 end;
+                 if (PrzebiegPartii[High(PrzebiegPartii)].Z='G2') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].NA='G4') and
+                    (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                 begin
+                  SetLength(ruchy, Length(ruchy)+1);
+                  ruchy[High(ruchy)]:='G3';
+                  MozliweWPrzelocie.ok:=true;
+                  MozliweWPrzelocie.bite:='G4';
+                  MozliweWPrzelocie.Z:='F4';
+                  MozliweWPrzelocie.Na:='G3';
+                 end;
+
+              end;
+
+           if (DaneBoard[pole.X,pole.Y].pole = 'G4') then
+                         begin
+                            if (PrzebiegPartii[High(PrzebiegPartii)].Z='F2') and
+                               (PrzebiegPartii[High(PrzebiegPartii)].NA='F4') and
+                               (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                            begin
+                             SetLength(ruchy, Length(ruchy)+1);
+                             ruchy[High(ruchy)]:='F3';
+                             MozliweWPrzelocie.ok:=true;
+                             MozliweWPrzelocie.bite:='F4';
+                             MozliweWPrzelocie.Z:='G4';
+                             MozliweWPrzelocie.Na:='F3';
+                            end;
+                            if (PrzebiegPartii[High(PrzebiegPartii)].Z='H2') and
+                               (PrzebiegPartii[High(PrzebiegPartii)].NA='H4') and
+                               (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
+                            begin
+                             SetLength(ruchy, Length(ruchy)+1);
+                             ruchy[High(ruchy)]:='H3';
+                             MozliweWPrzelocie.ok:=true;
+                             MozliweWPrzelocie.bite:='H4';
+                             MozliweWPrzelocie.Z:='G4';
+                             MozliweWPrzelocie.Na:='H3';
+                            end;
+
+                         end;
+
+        end;
+
+     {--- konczymy sprawdzanie bicia w przelocie dla czarnych --- }
 
      {tymczasowo sprawdzamy dla czarnych}
      if KogoRuch='czarne' then
@@ -1558,6 +1985,7 @@ begin
 KolorowanieRuchu.ok:=false;
 KolorowanieKrola.ok:=false;
 KogoRuch:='biale';
+MozliweWPrzelocie.ok:=false;
 
   GramKolorem := 'biale';
 
@@ -1773,6 +2201,7 @@ procedure TForm1.PaintBox1MouseUp(Sender: TObject; Button: TMouseButton;
 var
   tmp:TBierka;
   okKrol,okRuch:boolean;
+  z:TPoint;
 begin
 okKrol:=true;
 okRuch:=false;
@@ -1780,14 +2209,16 @@ okRuch:=false;
  if DAD then
  begin
 
-if ZnajdzPolebyXY[X,Y]=DaneBoard[PolePlansza.X,PolePlansza.Y].pole then
+ if ZnajdzPolebyXY(X,Y)=DaneBoard[PolePlansza.X,PolePlansza.Y].pole then
 begin
   DadBierka^.pole:=DaneBoard[PolePlansza.X, PolePlansza.Y].pole;
   DadBierka^.pozycja := ZnajdzXYbyPole(DadBierka^.pole);
   DAD:=false;
   SetLength(TablicaRuchow, 0);
+  PaintBox1.Invalidate;
   Exit;
 end;
+
 
   DadBierka^.pole:=ZnajdzPolebyXY(X,Y);
   DadBierka^.pozycja := ZnajdzXYbyPole(ZnajdzPolebyXY(X,Y));
@@ -1812,6 +2243,18 @@ begin
      KolorowanieRuchu.Z:=PolePlansza;
      KolorowanieRuchu.NA:=Point((Y div 80)+1,(X div 80)+1);
 
+     if MozliweWPrzelocie.ok then
+     begin
+         if (MozliweWPrzelocie.Z=DaneBoard[PolePlansza.X, PolePlansza.Y].pole) and
+            (MozliweWPrzelocie.NA=ZnajdzPolebyXY(X,Y)) then
+            begin
+               z:=ZnajdzIJbyPole(MozliweWPrzelocie.bite);
+               Board[z.x,z.y]:=nil;
+            end;
+         MozliweWPrzelocie.ok:=false;
+     end;
+
+     ZapiszRuch(DaneBoard[PolePlansza.X, PolePlansza.Y].pole, ZnajdzPolebyXY(X,Y), Board[KolorowanieRuchu.Na.x,KolorowanieRuchu.Na.y].rodzaj, Board[KolorowanieRuchu.Na.x,KolorowanieRuchu.Na.y].kolor, '');
 
 end
 else
@@ -1824,7 +2267,7 @@ end;
 
   memo1.lines.add('Ruch: '+DaneBoard[PolePlansza.X, PolePlansza.Y].pole+' na '+ZnajdzPolebyXY(X,Y));
 
-  ZapiszRuch(DaneBoard[PolePlansza.X, PolePlansza.Y].pole, ZnajdzPolebyXY(X,Y), '');
+
 
   DAD:=false;
   SetLength(TablicaRuchow, 0);
