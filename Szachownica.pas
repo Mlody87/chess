@@ -3867,6 +3867,7 @@ function TForm1.CzyRemis:boolean;
 var
 i,j:integer;
 JestGoniec,JestSkoczek:boolean;
+kolor:string;
 ruchy:TMapaRuchow;
 begin
 
@@ -3911,10 +3912,13 @@ if (Board[i,j]<>nil) and (Board[i,j].kolor='biale') and (Board[i,j].rodzaj<> 'kr
 begin
     if Board[i,j].rodzaj='goniec' then
     begin
-        if JestGoniec=true then
+        if (JestGoniec=true) then begin 
+        if DaneBoard[i,j].KolorPola<>kolor then
         Exit (False);
+        end;
 
         JestGoniec:=true;
+        kolor:=DaneBoard[i,j].KolorPola;
     end;
 end;
 end;
