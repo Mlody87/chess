@@ -25,6 +25,7 @@ type
 
   TDaneBoard=record
     pole:string;
+    KolorPola:string;
     X:integer;
     Y:integer;
   end;
@@ -4023,6 +4024,7 @@ procedure TForm1.FormCreate(Sender: TObject);
 var
   i,j,a,NumerPola,obraz:integer;
   kolor:string;
+  white:boolean;
 begin
 
 KolorowanieRuchu.ok:=false;
@@ -4168,6 +4170,21 @@ end;
           Board[8,5].pole:=DaneBoard[8,5].pole;
           Board[8,5].pozycja:=Point(DaneBoard[8,5].X, DaneBoard[8,5].Y);
 
+        end;
+        
+        white:=true;
+        for i:=1 to 8 do begin
+        for j:=1 to 8 do begin
+        	if white=true then begin
+        	DaneBoard[i,j].KolorPola:='biale';
+        	end
+        	else
+        	begin
+        	DaneBoard[i,j].KolorPola:='czarne';
+        	end;
+        	
+        	if white=true then begin white:=false; end else begin white:=true; end; 
+        end;
         end;
 
 
