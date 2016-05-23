@@ -2433,22 +2433,61 @@ end;
 
 //sprawdzamy czy broni krol
 
-if (B^[p.x-1,p.y]<>nil) and (B^[p.x-1,p.y].rodzaj='krol') and (B^[p.x-1,p.y].kolor=MojKolor) then
+if (p.X-1)>=1 then begin
+if (B^[p.x-1,p.y]<>nil) then begin
+if (B^[p.x-1,p.y].rodzaj='krol') and (B^[p.x-1,p.y].kolor=MojKolor) then
 wynik:=True;
-if (B^[p.x+1,p.y]<>nil) and (B^[p.x+1,p.y].rodzaj='krol') and (B^[p.x+1,p.y].kolor=MojKolor) then
+end;
+end;
+
+if (p.x+1<=8) then begin
+if (B^[p.x+1,p.y]<>nil) then begin
+if (B^[p.x+1,p.y].rodzaj='krol') and (B^[p.x+1,p.y].kolor=MojKolor) then
 wynik:=True;
-if (B^[p.x,p.y-1]<>nil) and (B^[p.x,p.y-1].rodzaj='krol') and (B^[p.x,p.y-1].kolor=MojKolor) then
+end;
+end;
+
+if (p.y-1)>=1 then begin
+if (B^[p.x,p.y-1]<>nil) then begin
+if (B^[p.x,p.y-1].rodzaj='krol') and (B^[p.x,p.y-1].kolor=MojKolor) then
 wynik:=True;
-if (B^[p.x,p.y+1]<>nil) and (B^[p.x,p.y+1].rodzaj='krol') and (B^[p.x,p.y+1].kolor=MojKolor) then
+end;
+end;
+
+if (p.y+1)<=8 then begin
+if (B^[p.x,p.y+1]<>nil) then begin
+if (B^[p.x,p.y+1].rodzaj='krol') and (B^[p.x,p.y+1].kolor=MojKolor) then
 wynik:=True;
-if (B^[p.x-1,p.y-1]<>nil) and (B^[p.x-1,p.y-1].rodzaj='krol') and (B^[p.x-1,p.y-1].kolor=MojKolor) then
+end;
+end;
+
+if (p.x-1>=1)and(p.y-1>=1) then begin
+if (B^[p.x-1,p.y-1]<>nil) then begin
+if (B^[p.x-1,p.y-1].rodzaj='krol') and (B^[p.x-1,p.y-1].kolor=MojKolor) then
 wynik:=True;
-if (B^[p.x-1,p.y+1]<>nil) and (B^[p.x-1,p.y+1].rodzaj='krol') and (B^[p.x-1,p.y+1].kolor=MojKolor) then
+end;
+end;
+
+if (p.x-1>=1)and(p.y+1<=8) then begin
+if (B^[p.x-1,p.y+1]<>nil) then begin
+if (B^[p.x-1,p.y+1].rodzaj='krol') and (B^[p.x-1,p.y+1].kolor=MojKolor) then
 wynik:=True;
-if (B^[p.x+1,p.y-1]<>nil) and (B^[p.x+1,p.y-1].rodzaj='krol') and (B^[p.x+1,p.y-1].kolor=MojKolor) then
+end;
+end;
+
+if (p.x+1<=8)and(p.y-1>=1) then begin
+if (B^[p.x+1,p.y-1]<>nil) then begin
+if (B^[p.x+1,p.y-1].rodzaj='krol') and (B^[p.x+1,p.y-1].kolor=MojKolor) then
 wynik:=True;
-if (B^[p.x+1,p.y+1]<>nil) and (B^[p.x+1,p.y+1].rodzaj='krol') and (B^[p.x+1,p.y+1].kolor=MojKolor) then
+end;
+end;
+
+if (p.x+1<=8)and(p.y+1<=8) then begin
+if (B^[p.x+1,p.y+1]<>nil) then begin
+if (B^[p.x+1,p.y+1].rodzaj='krol') and (B^[p.x+1,p.y+1].kolor=MojKolor) then
 wynik:=True;
+end;
+end;
 
       Result:=wynik; //jezeli false to nie broni
 
