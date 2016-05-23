@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-  StdCtrls, Grids, types, StrUtils;
+  StdCtrls, Grids, types, StrUtils, Unit2;
 
 type
 
@@ -56,6 +56,10 @@ type
 
   TMapaRuchow=array of string;
 
+  TBoard=array[1..8,1..8] of TBierka;
+
+  TTablicaPunktow=array of TPoint;
+
   TForm1 = class(TForm)
     Button1: TButton;
     Button2: TButton;
@@ -76,13 +80,23 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure PaintBox1Paint(Sender: TObject);
     function ZnajdzIJbyPole(pole:string):TPoint;
-    function SprawdzKrolaBialego(pole:TPoint; na:string):boolean;
-    function SprawdzKrolaCzarnego(pole:TPoint; na:string):boolean;
+    function SprawdzKrola(pole:TPoint; na:string):boolean;
     function MozliweRuchy(WyjsciowePole:string):TMapaRuchow;
     function CzyLegalnyRuch(NaPole:string):boolean;
     function ZapiszRuch(Z,Na,rodzaj,kolor,Uwagi:string):boolean;
     function OdswiezPrzebieg:boolean;
     function WykonajRuch(Z,Na,Uwagi:string):boolean;
+    function CzySieRuszal(polozenie:TPoint):boolean;   //do roszady
+    function CzyCosAtakujePole(pozycja,rodzaj,MojKolor:string;szachownica:Pointer):boolean;//do roszady
+    function CzyMat(kolor:string):boolean;  //do mata
+    function CzyKrolMaGdzieUciec(K:TPoint):boolean;
+    function CzyCosBroniPole(pozycja,rodzaj,MojKolor:string;szachownica:Pointer):boolean;
+    function KtoAtakujePole(p:TPoint; szachownica:Pointer):TTablicaPunktow;
+    function CzyMoznaZaslonic(atakowany,atakujacy:TPoint):boolean;
+    function CzyCosStanieNaPolu(pozycja,MojKolor:string;szachownica:Pointer):boolean; //zasloniecie przed matem
+    function CzyPat(ruch:string):boolean;
+    function ZostalTylkoKrol(kolor:string):boolean;
+    function CzyRemis:boolean;
   private
     { private declarations }
   public
@@ -111,7 +125,7 @@ CONST
 var
   Form1: TForm1;
 
-  Board : array[1..8,1..8] of TBierka;
+  Board : TBoard;
   DaneBoard : array[1..8,1..8] of TDaneBoard;
 
   GramKolorem:string;
@@ -191,6 +205,9 @@ begin
 a:=ZnajdzIJbyPole(Z);
 b:=ZnajdzIJbyPole(Na);
 
+if Board[b.x,b.y]<>nil then
+ FreeAndNil(Board[b.x,b.y]);
+
 Board[b.x,b.y]:=Board[a.x,a.y];
 
 Board[b.x,b.y].pole:=Na;
@@ -198,14 +215,9 @@ Board[b.x,b.y].pozycja := ZnajdzXYbyPole(Na);
 
 Board[a.x,a.y]:=nil;
 
-if KogoRuch='biale' then KogoRuch:='czarne'
-else KogoRuch:='biale';
-
 KolorowanieRuchu.ok:=true;
 KolorowanieRuchu.Z:=ZnajdzIJbyPole(Z);
 KolorowanieRuchu.NA:=ZnajdzIJbyPole(Na);
-
-ZapiszRuch(Z,Na,Board[b.x,b.y].rodzaj,Board[b.x,b.y].kolor,'');
 
 PaintBox1.Invalidate;
 
@@ -248,10 +260,46 @@ function TForm1.ZapiszRuch(Z,Na,rodzaj,kolor,Uwagi:string):boolean;
 begin
 
 SetLength(PrzebiegPartii, Length(PrzebiegPartii)+1);
-PrzebiegPartii[High(PrzebiegPartii)].figura:=rodzaj;
 PrzebiegPartii[High(PrzebiegPartii)].kolor:=kolor;
-PrzebiegPartii[High(PrzebiegPartii)].Z:=Z;
-PrzebiegPartii[High(PrzebiegPartii)].NA:=Na;
+if (Z='E1')and(Na='G1')and(rodzaj='krol')then    //jezeli krotka roszada bialych
+begin
+    PrzebiegPartii[High(PrzebiegPartii)].figura:='';
+    PrzebiegPartii[High(PrzebiegPartii)].Z:='O-O';
+    PrzebiegPartii[High(PrzebiegPartii)].NA:='';
+end
+else
+begin
+     if (Z='E1')and(Na='C1')and(rodzaj='krol')then    //jezeli dluga roszada bialych
+     begin
+          PrzebiegPartii[High(PrzebiegPartii)].figura:='';
+          PrzebiegPartii[High(PrzebiegPartii)].Z:='O-O-O';
+          PrzebiegPartii[High(PrzebiegPartii)].NA:='';
+     end
+     else
+     begin
+          if (Z='E8')and(Na='G8')and(rodzaj='krol') then    //jezeli krotka roszada czarnych
+          begin
+                   PrzebiegPartii[High(PrzebiegPartii)].figura:='';
+                   PrzebiegPartii[High(PrzebiegPartii)].Z:='O-O';
+                   PrzebiegPartii[High(PrzebiegPartii)].NA:='';
+          end
+          else
+          begin
+               if (Z='E8')and(Na='C8')and(rodzaj='krol') then    //jezeli dluga roszada czarnych
+               begin
+                       PrzebiegPartii[High(PrzebiegPartii)].figura:='';
+                       PrzebiegPartii[High(PrzebiegPartii)].Z:='O-O-O';
+                       PrzebiegPartii[High(PrzebiegPartii)].NA:='';
+               end
+               else
+               begin
+                       PrzebiegPartii[High(PrzebiegPartii)].figura:=rodzaj;
+                       PrzebiegPartii[High(PrzebiegPartii)].Z:=Z;
+                       PrzebiegPartii[High(PrzebiegPartii)].NA:=Na;
+               end;
+          end;
+     end;
+end;
 PrzebiegPartii[High(PrzebiegPartii)].uwagi:=Uwagi;
 
 OdswiezPrzebieg;
@@ -279,11 +327,18 @@ ruchy:TMapaRuchow;
 pole:TPoint;
 i,j:integer;
 kolor,bierka:string;
+tmp,tmp2,tmp3,PozycjaKrola:TPoint;
+tmpBoard:TBoard;
 begin
 
 pole:=ZnajdzIJbyPole(WyjsciowePole);
 kolor:=Board[pole.X, pole.Y].kolor;
 bierka:=Board[pole.X, pole.Y].rodzaj;
+
+for i:=1 to 8 do
+for j:=1 to 8 do
+  if Board[i,j]<>nil then begin if (Board[i,j].rodzaj='krol') and (Board[i,j].kolor=kolor) then PozycjaKrola:=Point(i,j); end;
+
 
 {SPRAWDZAMY MOZLIWE RUCHY DLA WIEZY}
 
@@ -297,16 +352,28 @@ if bierka = 'wieza' then
                 begin
                      if Board[pole.X, pole.Y+i]=nil then
                       begin
+                           tmpBoard:=Board;
+                           tmpBoard[pole.X,pole.y+i]:=tmpBoard[pole.X,pole.Y];
+                           tmpBoard[pole.X,pole.Y]:=nil;
+                           if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                            begin
                            SetLength(ruchy, Length(ruchy)+1);
                            ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y+i].pole;
+                           end;
                       end
                      else
                      begin
                            if Board[pole.X, pole.Y+i].kolor = kolor then begin Break; end
                            else
                             begin
-                              SetLength(ruchy, Length(ruchy)+1);
-                              ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y+i].pole;
+                            tmpBoard:=Board;
+                            tmpBoard[pole.X,pole.y+i]:=tmpBoard[pole.X,pole.Y];
+                            tmpBoard[pole.X,pole.Y]:=nil;
+                            if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                             begin
+                            SetLength(ruchy, Length(ruchy)+1);
+                            ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y+i].pole;
+                            end;
                               Break;
                             end;
                      end;
@@ -321,16 +388,28 @@ if bierka = 'wieza' then
                 begin
                      if Board[pole.X, pole.Y-i]=nil then
                       begin
-                           SetLength(ruchy, Length(ruchy)+1);
-                           ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y-i].pole;
+                          tmpBoard:=Board;
+                          tmpBoard[pole.X,pole.y-i]:=tmpBoard[pole.X,pole.Y];
+                          tmpBoard[pole.X,pole.Y]:=nil;
+                          if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                           begin
+                          SetLength(ruchy, Length(ruchy)+1);
+                          ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y-i].pole;
+                          end;
                       end
                      else
                      begin
                            if Board[pole.X, pole.Y-i].kolor = kolor then begin Break; end
                            else
                            begin
-                              SetLength(ruchy, Length(ruchy)+1);
-                              ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y-i].pole;
+                           tmpBoard:=Board;
+                           tmpBoard[pole.X,pole.y-i]:=tmpBoard[pole.X,pole.Y];
+                           tmpBoard[pole.X,pole.Y]:=nil;
+                           if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                            begin
+                           SetLength(ruchy, Length(ruchy)+1);
+                           ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y-i].pole;
+                           end;
                               Break;
                             end;
                      end;
@@ -345,16 +424,28 @@ if bierka = 'wieza' then
                 begin
                      if Board[pole.X+i, pole.Y]=nil then
                       begin
-                           SetLength(ruchy, Length(ruchy)+1);
-                           ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y].pole;
+                          tmpBoard:=Board;
+                          tmpBoard[pole.X+i,pole.y]:=tmpBoard[pole.X,pole.Y];
+                          tmpBoard[pole.X,pole.Y]:=nil;
+                          if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                           begin
+                          SetLength(ruchy, Length(ruchy)+1);
+                          ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y].pole;
+                          end;
                       end
                      else
                      begin
                            if Board[pole.X+i, pole.Y].kolor = kolor then begin Break; end
                            else
                            begin
-                              SetLength(ruchy, Length(ruchy)+1);
-                              ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y].pole;
+                           tmpBoard:=Board;
+                           tmpBoard[pole.X+i,pole.y]:=tmpBoard[pole.X,pole.Y];
+                           tmpBoard[pole.X,pole.Y]:=nil;
+                           if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                            begin
+                           SetLength(ruchy, Length(ruchy)+1);
+                           ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y].pole;
+                           end;
                               Break;
                             end;
                      end;
@@ -368,16 +459,28 @@ if bierka = 'wieza' then
                 begin
                      if Board[pole.X-i, pole.Y]=nil then
                       begin
-                           SetLength(ruchy, Length(ruchy)+1);
-                           ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y].pole;
+                          tmpBoard:=Board;
+                          tmpBoard[pole.X-i,pole.y]:=tmpBoard[pole.X,pole.Y];
+                          tmpBoard[pole.X,pole.Y]:=nil;
+                          if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                           begin
+                          SetLength(ruchy, Length(ruchy)+1);
+                          ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y].pole;
+                          end;
                       end
                      else
                      begin
                            if Board[pole.X-i, pole.Y].kolor = kolor then begin Break; end
                            else
                            begin
-                              SetLength(ruchy, Length(ruchy)+1);
-                              ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y].pole;
+                           tmpBoard:=Board;
+                           tmpBoard[pole.X-i,pole.y]:=tmpBoard[pole.X,pole.Y];
+                           tmpBoard[pole.X,pole.Y]:=nil;
+                           if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                            begin
+                           SetLength(ruchy, Length(ruchy)+1);
+                           ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y].pole;
+                           end;
                               Break;
                             end;
                      end;
@@ -394,13 +497,21 @@ if bierka = 'pion' then
  begin
       {sprawdzamy ruch piona}
 
-      if KogoRuch='biale' then
+     // if KogoRuch='biale' then
+      if KogoRuch=GramKolorem then
        begin
 
             if Board[pole.X-1, pole.Y]=nil then
             begin
-                 SetLength(ruchy, Length(ruchy)+1);
-                 ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y].pole;
+
+                tmpBoard:=Board;
+                tmpBoard[pole.X-1,pole.y]:=tmpBoard[pole.X,pole.Y];
+                tmpBoard[pole.X,pole.Y]:=nil;
+                if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                 begin
+                SetLength(ruchy, Length(ruchy)+1);
+                ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y].pole;
+                end;
             end;
 
             if pole.X=7 then  //pierwszy ruch, mozna o dwa, sprawdzamy
@@ -408,8 +519,14 @@ if bierka = 'pion' then
 
                        if Board[pole.X-2, pole.Y]=nil then
                        begin
-                            SetLength(ruchy, Length(ruchy)+1);
-                            ruchy[High(ruchy)]:=DaneBoard[pole.X-2, pole.Y].pole;
+                           tmpBoard:=Board;
+                           tmpBoard[pole.X-2,pole.y]:=tmpBoard[pole.X,pole.Y];
+                           tmpBoard[pole.X,pole.Y]:=nil;
+                           if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                            begin
+                           SetLength(ruchy, Length(ruchy)+1);
+                           ruchy[High(ruchy)]:=DaneBoard[pole.X-2, pole.Y].pole;
+                           end;
                        end;
 
             end;
@@ -421,8 +538,14 @@ if bierka = 'pion' then
                 begin
                     if Board[pole.X-1, pole.Y-1].kolor<>kolor then
                     begin
-                         SetLength(ruchy, Length(ruchy)+1);
-                         ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y-1].pole;
+                        tmpBoard:=Board;
+                        tmpBoard[pole.X-1,pole.y-1]:=tmpBoard[pole.X,pole.Y];
+                        tmpBoard[pole.X,pole.Y]:=nil;
+                        if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                         begin
+                        SetLength(ruchy, Length(ruchy)+1);
+                        ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y-1].pole;
+                        end;
                     end;
                 end;
             end;
@@ -434,13 +557,19 @@ if bierka = 'pion' then
          begin
              if Board[pole.X-1, pole.Y+1].kolor<>kolor then
              begin
-                  SetLength(ruchy, Length(ruchy)+1);
-                  ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y+1].pole;
+                 tmpBoard:=Board;
+                 tmpBoard[pole.X-1,pole.y+1]:=tmpBoard[pole.X,pole.Y];
+                 tmpBoard[pole.X,pole.Y]:=nil;
+                 if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                  begin
+                 SetLength(ruchy, Length(ruchy)+1);
+                 ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y+1].pole;
+                 end;
              end;
          end;
      end;
 
-     {-- bicie w przelocie dla bialych --}
+     {-- bicie w przelocie dla dolu bialych --}
 
      if (DaneBoard[pole.X,pole.Y].pole = 'A5') or
         (DaneBoard[pole.X,pole.Y].pole = 'B5') or
@@ -457,12 +586,22 @@ if bierka = 'pion' then
                     (PrzebiegPartii[High(PrzebiegPartii)].NA='B5') and
                     (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
                  begin
+                 tmpBoard:=Board;
+                 tmp:=ZnajdzIJbyPole('A5');
+                 tmp2:=ZnajdzIJbyPole('B6');
+                 tmp3:=ZnajdzIJbyPole('B5');
+                 tmpBoard[tmp2.X-1,tmp2.y+1]:=tmpBoard[tmp.X,tmp.Y];
+                 tmpBoard[tmp.X,tmp.Y]:=nil;
+                 tmpBoard[tmp3.x,tmp3.y]:=nil;
+                 if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                  begin
                   SetLength(ruchy, Length(ruchy)+1);
                   ruchy[High(ruchy)]:='B6';
                   MozliweWPrzelocie.ok:=true;
                   MozliweWPrzelocie.bite:='B5';
                   MozliweWPrzelocie.Z:='A5';
                   MozliweWPrzelocie.Na:='B6';
+                  end;
                  end;
 
               end;
@@ -473,12 +612,22 @@ if bierka = 'pion' then
                     (PrzebiegPartii[High(PrzebiegPartii)].NA='G5') and
                     (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
                  begin
+                     tmpBoard:=Board;
+                     tmp:=ZnajdzIJbyPole('H5');
+                     tmp2:=ZnajdzIJbyPole('G6');
+                     tmp3:=ZnajdzIJbyPole('G5');
+                     tmpBoard[tmp2.X-1,tmp2.y+1]:=tmpBoard[tmp.X,tmp.Y];
+                     tmpBoard[tmp.X,tmp.Y]:=nil;
+                     tmpBoard[tmp3.x,tmp3.y]:=nil;
+                     if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                      begin
                   SetLength(ruchy, Length(ruchy)+1);
                   ruchy[High(ruchy)]:='G6';
                   MozliweWPrzelocie.ok:=true;
                   MozliweWPrzelocie.bite:='G5';
                   MozliweWPrzelocie.Z:='H5';
                   MozliweWPrzelocie.Na:='G6';
+                  end;
                  end;
 
               end;
@@ -489,23 +638,43 @@ if bierka = 'pion' then
                     (PrzebiegPartii[High(PrzebiegPartii)].NA='A5') and
                     (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
                  begin
+                     tmpBoard:=Board;
+                     tmp:=ZnajdzIJbyPole('B5');
+                     tmp2:=ZnajdzIJbyPole('A6');
+                     tmp3:=ZnajdzIJbyPole('A5');
+                     tmpBoard[tmp2.X-1,tmp2.y+1]:=tmpBoard[tmp.X,tmp.Y];
+                     tmpBoard[tmp.X,tmp.Y]:=nil;
+                     tmpBoard[tmp3.x,tmp3.y]:=nil;
+                     if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                      begin
                   SetLength(ruchy, Length(ruchy)+1);
                   ruchy[High(ruchy)]:='A6';
                   MozliweWPrzelocie.ok:=true;
                   MozliweWPrzelocie.bite:='A5';
                   MozliweWPrzelocie.Z:='B5';
                   MozliweWPrzelocie.Na:='A6';
+                  END;
                  end;
                  if (PrzebiegPartii[High(PrzebiegPartii)].Z='C7') and
                     (PrzebiegPartii[High(PrzebiegPartii)].NA='C5') and
                     (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
                  begin
+                     tmpBoard:=Board;
+                     tmp:=ZnajdzIJbyPole('B5');
+                     tmp2:=ZnajdzIJbyPole('C6');
+                     tmp3:=ZnajdzIJbyPole('C5');
+                     tmpBoard[tmp2.X-1,tmp2.y+1]:=tmpBoard[tmp.X,tmp.Y];
+                     tmpBoard[tmp.X,tmp.Y]:=nil;
+                     tmpBoard[tmp3.x,tmp3.y]:=nil;
+                     if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                      begin
                   SetLength(ruchy, Length(ruchy)+1);
                   ruchy[High(ruchy)]:='C6';
                   MozliweWPrzelocie.ok:=true;
                   MozliweWPrzelocie.bite:='C5';
                   MozliweWPrzelocie.Z:='B5';
                   MozliweWPrzelocie.Na:='C6';
+                  END;
                  end;
 
               end;
@@ -516,23 +685,43 @@ if bierka = 'pion' then
                     (PrzebiegPartii[High(PrzebiegPartii)].NA='B5') and
                     (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
                  begin
+                     tmpBoard:=Board;
+                     tmp:=ZnajdzIJbyPole('C5');
+                     tmp2:=ZnajdzIJbyPole('B6');
+                     tmp3:=ZnajdzIJbyPole('B5');
+                     tmpBoard[tmp2.X-1,tmp2.y+1]:=tmpBoard[tmp.X,tmp.Y];
+                     tmpBoard[tmp.X,tmp.Y]:=nil;
+                     tmpBoard[tmp3.x,tmp3.y]:=nil;
+                     if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                      begin
                   SetLength(ruchy, Length(ruchy)+1);
                   ruchy[High(ruchy)]:='B6';
                   MozliweWPrzelocie.ok:=true;
                   MozliweWPrzelocie.bite:='B5';
                   MozliweWPrzelocie.Z:='C5';
                   MozliweWPrzelocie.Na:='B6';
+                  END;
                  end;
                  if (PrzebiegPartii[High(PrzebiegPartii)].Z='D7') and
                     (PrzebiegPartii[High(PrzebiegPartii)].NA='D5') and
                     (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
                  begin
+                     tmpBoard:=Board;
+                     tmp:=ZnajdzIJbyPole('C5');
+                     tmp2:=ZnajdzIJbyPole('D6');
+                     tmp3:=ZnajdzIJbyPole('D5');
+                     tmpBoard[tmp2.X-1,tmp2.y+1]:=tmpBoard[tmp.X,tmp.Y];
+                     tmpBoard[tmp.X,tmp.Y]:=nil;
+                     tmpBoard[tmp3.x,tmp3.y]:=nil;
+                     if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                      begin
                   SetLength(ruchy, Length(ruchy)+1);
                   ruchy[High(ruchy)]:='D6';
                   MozliweWPrzelocie.ok:=true;
                   MozliweWPrzelocie.bite:='D5';
                   MozliweWPrzelocie.Z:='C5';
                   MozliweWPrzelocie.Na:='D6';
+                  END;
                  end;
 
               end;
@@ -543,23 +732,43 @@ if bierka = 'pion' then
                     (PrzebiegPartii[High(PrzebiegPartii)].NA='C5') and
                     (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
                  begin
+                     tmpBoard:=Board;
+                     tmp:=ZnajdzIJbyPole('D5');
+                     tmp2:=ZnajdzIJbyPole('C6');
+                     tmp3:=ZnajdzIJbyPole('C5');
+                     tmpBoard[tmp2.X-1,tmp2.y+1]:=tmpBoard[tmp.X,tmp.Y];
+                     tmpBoard[tmp.X,tmp.Y]:=nil;
+                     tmpBoard[tmp3.x,tmp3.y]:=nil;
+                     if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                      begin
                   SetLength(ruchy, Length(ruchy)+1);
                   ruchy[High(ruchy)]:='C6';
                   MozliweWPrzelocie.ok:=true;
                   MozliweWPrzelocie.bite:='C5';
                   MozliweWPrzelocie.Z:='D5';
                   MozliweWPrzelocie.Na:='C6';
+                  END;
                  end;
                  if (PrzebiegPartii[High(PrzebiegPartii)].Z='E7') and
                     (PrzebiegPartii[High(PrzebiegPartii)].NA='E5') and
                     (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
                  begin
+                     tmpBoard:=Board;
+                     tmp:=ZnajdzIJbyPole('D5');
+                     tmp2:=ZnajdzIJbyPole('E6');
+                     tmp3:=ZnajdzIJbyPole('E5');
+                     tmpBoard[tmp2.X-1,tmp2.y+1]:=tmpBoard[tmp.X,tmp.Y];
+                     tmpBoard[tmp.X,tmp.Y]:=nil;
+                     tmpBoard[tmp3.x,tmp3.y]:=nil;
+                     if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                      begin
                   SetLength(ruchy, Length(ruchy)+1);
                   ruchy[High(ruchy)]:='E6';
                   MozliweWPrzelocie.ok:=true;
                   MozliweWPrzelocie.bite:='E5';
                   MozliweWPrzelocie.Z:='D5';
                   MozliweWPrzelocie.Na:='E6';
+                  END;
                  end;
 
               end;
@@ -570,23 +779,43 @@ if bierka = 'pion' then
                     (PrzebiegPartii[High(PrzebiegPartii)].NA='D5') and
                     (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
                  begin
+                     tmpBoard:=Board;
+                     tmp:=ZnajdzIJbyPole('E5');
+                     tmp2:=ZnajdzIJbyPole('D6');
+                     tmp3:=ZnajdzIJbyPole('D5');
+                     tmpBoard[tmp2.X-1,tmp2.y+1]:=tmpBoard[tmp.X,tmp.Y];
+                     tmpBoard[tmp.X,tmp.Y]:=nil;
+                     tmpBoard[tmp3.x,tmp3.y]:=nil;
+                     if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                      begin
                   SetLength(ruchy, Length(ruchy)+1);
                   ruchy[High(ruchy)]:='D6';
                   MozliweWPrzelocie.ok:=true;
                   MozliweWPrzelocie.bite:='D5';
                   MozliweWPrzelocie.Z:='E5';
                   MozliweWPrzelocie.Na:='D6';
+                  END;
                  end;
                  if (PrzebiegPartii[High(PrzebiegPartii)].Z='F7') and
                     (PrzebiegPartii[High(PrzebiegPartii)].NA='F5') and
                     (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
                  begin
+                     tmpBoard:=Board;
+                     tmp:=ZnajdzIJbyPole('E5');
+                     tmp2:=ZnajdzIJbyPole('F6');
+                     tmp3:=ZnajdzIJbyPole('F5');
+                     tmpBoard[tmp2.X-1,tmp2.y+1]:=tmpBoard[tmp.X,tmp.Y];
+                     tmpBoard[tmp.X,tmp.Y]:=nil;
+                     tmpBoard[tmp3.x,tmp3.y]:=nil;
+                     if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                      begin
                   SetLength(ruchy, Length(ruchy)+1);
                   ruchy[High(ruchy)]:='F6';
                   MozliweWPrzelocie.ok:=true;
                   MozliweWPrzelocie.bite:='F5';
                   MozliweWPrzelocie.Z:='E5';
                   MozliweWPrzelocie.Na:='F6';
+                  END;
                  end;
 
               end;
@@ -597,23 +826,43 @@ if bierka = 'pion' then
                     (PrzebiegPartii[High(PrzebiegPartii)].NA='E5') and
                     (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
                  begin
+                     tmpBoard:=Board;
+                     tmp:=ZnajdzIJbyPole('F5');
+                     tmp2:=ZnajdzIJbyPole('E6');
+                     tmp3:=ZnajdzIJbyPole('E5');
+                     tmpBoard[tmp2.X-1,tmp2.y+1]:=tmpBoard[tmp.X,tmp.Y];
+                     tmpBoard[tmp.X,tmp.Y]:=nil;
+                     tmpBoard[tmp3.x,tmp3.y]:=nil;
+                     if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                      begin
                   SetLength(ruchy, Length(ruchy)+1);
                   ruchy[High(ruchy)]:='E6';
                   MozliweWPrzelocie.ok:=true;
                   MozliweWPrzelocie.bite:='E5';
                   MozliweWPrzelocie.Z:='F5';
                   MozliweWPrzelocie.Na:='E6';
+                  END;
                  end;
                  if (PrzebiegPartii[High(PrzebiegPartii)].Z='G7') and
                     (PrzebiegPartii[High(PrzebiegPartii)].NA='G5') and
                     (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
                  begin
+                     tmpBoard:=Board;
+                     tmp:=ZnajdzIJbyPole('F5');
+                     tmp2:=ZnajdzIJbyPole('G6');
+                     tmp3:=ZnajdzIJbyPole('G5');
+                     tmpBoard[tmp2.X-1,tmp2.y+1]:=tmpBoard[tmp.X,tmp.Y];
+                     tmpBoard[tmp.X,tmp.Y]:=nil;
+                     tmpBoard[tmp3.x,tmp3.y]:=nil;
+                     if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                      begin
                   SetLength(ruchy, Length(ruchy)+1);
                   ruchy[High(ruchy)]:='G6';
                   MozliweWPrzelocie.ok:=true;
                   MozliweWPrzelocie.bite:='G5';
                   MozliweWPrzelocie.Z:='F5';
                   MozliweWPrzelocie.Na:='G6';
+                  END;
                  end;
 
               end;
@@ -624,32 +873,52 @@ if bierka = 'pion' then
                                (PrzebiegPartii[High(PrzebiegPartii)].NA='F5') and
                                (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
                             begin
+                     tmpBoard:=Board;
+                     tmp:=ZnajdzIJbyPole('G5');
+                     tmp2:=ZnajdzIJbyPole('F6');
+                     tmp3:=ZnajdzIJbyPole('F5');
+                     tmpBoard[tmp2.X-1,tmp2.y+1]:=tmpBoard[tmp.X,tmp.Y];
+                     tmpBoard[tmp.X,tmp.Y]:=nil;
+                     tmpBoard[tmp3.x,tmp3.y]:=nil;
+                     if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                      begin
                              SetLength(ruchy, Length(ruchy)+1);
                              ruchy[High(ruchy)]:='F6';
                              MozliweWPrzelocie.ok:=true;
                              MozliweWPrzelocie.bite:='F5';
                              MozliweWPrzelocie.Z:='G5';
                              MozliweWPrzelocie.Na:='F6';
+                             END;
                             end;
                             if (PrzebiegPartii[High(PrzebiegPartii)].Z='H7') and
                                (PrzebiegPartii[High(PrzebiegPartii)].NA='H5') and
                                (PrzebiegPartii[High(PrzebiegPartii)].figura='pion') then
                             begin
+                     tmpBoard:=Board;
+                     tmp:=ZnajdzIJbyPole('G5');
+                     tmp2:=ZnajdzIJbyPole('H6');
+                     tmp3:=ZnajdzIJbyPole('H5');
+                     tmpBoard[tmp2.X-1,tmp2.y+1]:=tmpBoard[tmp.X,tmp.Y];
+                     tmpBoard[tmp.X,tmp.Y]:=nil;
+                     tmpBoard[tmp3.x,tmp3.y]:=nil;
+                     if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                      begin
                              SetLength(ruchy, Length(ruchy)+1);
                              ruchy[High(ruchy)]:='H6';
                              MozliweWPrzelocie.ok:=true;
                              MozliweWPrzelocie.bite:='H5';
                              MozliweWPrzelocie.Z:='G5';
                              MozliweWPrzelocie.Na:='H6';
+                             END;
                             end;
 
                          end;
 
         end;
 
-     {-- konczymy sprawdzanie bicie w przelocie dla bialych--}
+     {-- konczymy sprawdzanie bicie w przelocie dla dolu bialych--}
 
-          {-- bicie w przelocie dla czarnych --}
+          {-- bicie w przelocie dla dolu czarnych --}     {ZROBIC SPRAWDZANIE POPRAWNOSCI RUCHU PO BICIU}
 
      if (DaneBoard[pole.X,pole.Y].pole = 'A4') or
         (DaneBoard[pole.X,pole.Y].pole = 'B4') or
@@ -856,56 +1125,6 @@ if bierka = 'pion' then
 
         end;
 
-     {--- konczymy sprawdzanie bicia w przelocie dla czarnych --- }
-
-     {tymczasowo sprawdzamy dla czarnych}
-     if KogoRuch='czarne' then
-     begin
-
-
-     if Board[pole.X+1, pole.Y]=nil then
-            begin
-                 SetLength(ruchy, Length(ruchy)+1);
-                 ruchy[High(ruchy)]:=DaneBoard[pole.X+1, pole.Y].pole;
-            end;
-
-            if pole.X=2 then  //pierwszy ruch, mozna o dwa, sprawdzamy
-            begin
-
-                       if Board[pole.X+2, pole.Y]=nil then
-                       begin
-                            SetLength(ruchy, Length(ruchy)+1);
-                            ruchy[High(ruchy)]:=DaneBoard[pole.X+2, pole.Y].pole;
-                       end;
-
-            end;
-
-       {sprawdzamy bicie piona}
-            if (pole.X+1<=8) and (pole.Y-1>=1) then    //bicie w lewo
-            begin
-                if Board[pole.X+1, pole.Y-1]<>nil then
-                begin
-                    if Board[pole.X+1, pole.Y-1].kolor<>kolor then
-                    begin
-                         SetLength(ruchy, Length(ruchy)+1);
-                         ruchy[High(ruchy)]:=DaneBoard[pole.X+1, pole.Y-1].pole;
-                    end;
-                end;
-            end;
-
-     if (pole.X+1<=8) and (pole.Y+1<=8) then    //bicie w prawo
-     begin
-         if Board[pole.X+1, pole.Y+1]<>nil then
-         begin
-             if Board[pole.X+1, pole.Y+1].kolor<>kolor then
-             begin
-                  SetLength(ruchy, Length(ruchy)+1);
-                  ruchy[High(ruchy)]:=DaneBoard[pole.X+1, pole.Y+1].pole;
-             end;
-         end;
-     end;
-
-     end;  //koniec sprawdzania dla czarnych
 
      result:=ruchy;
  end;
@@ -921,16 +1140,28 @@ begin
 
       if Board[pole.X-i, pole.Y-i]=nil then
       begin
-         SetLength(ruchy, Length(ruchy)+1);
-         ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y-i].pole;
+          tmpBoard:=Board;
+          tmpBoard[pole.X-i,pole.y-i]:=tmpBoard[pole.X,pole.Y];
+          tmpBoard[pole.X,pole.Y]:=nil;
+          if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+           begin
+               SetLength(ruchy, Length(ruchy)+1);
+               ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y-i].pole;
+          end;
       end
       else
       begin
          if Board[pole.X-i, pole.Y-i].kolor=kolor then begin Break; end
          else
          begin
+         tmpBoard:=Board;
+         tmpBoard[pole.X-i,pole.y-i]:=tmpBoard[pole.X,pole.Y];
+         tmpBoard[pole.X,pole.Y]:=nil;
+         if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+          begin
               SetLength(ruchy, Length(ruchy)+1);
               ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y-i].pole;
+         end;
               Break;
          end;
       end;
@@ -943,16 +1174,28 @@ begin
 
       if Board[pole.X-i, pole.Y+i]=nil then
       begin
-         SetLength(ruchy, Length(ruchy)+1);
-         ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y+i].pole;
+          tmpBoard:=Board;
+          tmpBoard[pole.X-i,pole.y+i]:=tmpBoard[pole.X,pole.Y];
+          tmpBoard[pole.X,pole.Y]:=nil;
+          if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+           begin
+               SetLength(ruchy, Length(ruchy)+1);
+               ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y+i].pole;
+          end;
       end
       else
       begin
          if Board[pole.X-i, pole.Y+i].kolor=kolor then begin Break; end
          else
          begin
-              SetLength(ruchy, Length(ruchy)+1);
-              ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y+i].pole;
+         tmpBoard:=Board;
+         tmpBoard[pole.X-i,pole.y+i]:=tmpBoard[pole.X,pole.Y];
+         tmpBoard[pole.X,pole.Y]:=nil;
+         if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+          begin
+         SetLength(ruchy, Length(ruchy)+1);
+         ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y+i].pole;
+         end;
               Break;
          end;
       end;
@@ -965,16 +1208,28 @@ begin
 
       if Board[pole.X+i, pole.Y-i]=nil then
       begin
-         SetLength(ruchy, Length(ruchy)+1);
-         ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y-i].pole;
+          tmpBoard:=Board;
+          tmpBoard[pole.X+i,pole.y-i]:=tmpBoard[pole.X,pole.Y];
+          tmpBoard[pole.X,pole.Y]:=nil;
+          if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+           begin
+          SetLength(ruchy, Length(ruchy)+1);
+          ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y-i].pole;
+          end;
       end
       else
       begin
          if Board[pole.X+i, pole.Y-i].kolor=kolor then begin Break end
          else
          begin
-              SetLength(ruchy, Length(ruchy)+1);
-              ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y-i].pole;
+         tmpBoard:=Board;
+         tmpBoard[pole.X+i,pole.y-i]:=tmpBoard[pole.X,pole.Y];
+         tmpBoard[pole.X,pole.Y]:=nil;
+         if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+          begin
+         SetLength(ruchy, Length(ruchy)+1);
+         ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y-i].pole;
+         end;
               Break;
          end;
       end;
@@ -987,16 +1242,28 @@ begin
 
       if Board[pole.X+i, pole.Y+i]=nil then
       begin
-         SetLength(ruchy, Length(ruchy)+1);
-         ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y+i].pole;
+          tmpBoard:=Board;
+          tmpBoard[pole.X+i,pole.y+i]:=tmpBoard[pole.X,pole.Y];
+          tmpBoard[pole.X,pole.Y]:=nil;
+          if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+           begin
+          SetLength(ruchy, Length(ruchy)+1);
+          ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y+i].pole;
+          end;
       end
       else
       begin
          if Board[pole.X+i, pole.Y+i].kolor=kolor then begin Break end
          else
          begin
-              SetLength(ruchy, Length(ruchy)+1);
-              ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y+i].pole;
+         tmpBoard:=Board;
+         tmpBoard[pole.X+i,pole.y+i]:=tmpBoard[pole.X,pole.Y];
+         tmpBoard[pole.X,pole.Y]:=nil;
+         if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+          begin
+         SetLength(ruchy, Length(ruchy)+1);
+         ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y+i].pole;
+         end;
               Break;
          end;
       end;
@@ -1016,15 +1283,27 @@ begin
     begin
         if Board[pole.X+1, pole.Y+2]=nil then
         begin
+            tmpBoard:=Board;
+            tmpBoard[pole.X+1,pole.y+2]:=tmpBoard[pole.X,pole.Y];
+            tmpBoard[pole.X,pole.Y]:=nil;
+            if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+             begin
             SetLength(ruchy, Length(ruchy)+1);
             ruchy[High(ruchy)]:=DaneBoard[pole.X+1, pole.Y+2].pole;
+            end;
         end
         else
         begin
            if Board[pole.X+1, pole.Y+2].kolor<>kolor then
            begin
+               tmpBoard:=Board;
+               tmpBoard[pole.X+1,pole.y+2]:=tmpBoard[pole.X,pole.Y];
+               tmpBoard[pole.X,pole.Y]:=nil;
+               if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                begin
                SetLength(ruchy, Length(ruchy)+1);
                ruchy[High(ruchy)]:=DaneBoard[pole.X+1, pole.Y+2].pole;
+               end;
            end;
         end;
     end;
@@ -1034,15 +1313,27 @@ begin
     begin
         if Board[pole.X-1, pole.Y-2]=nil then
         begin
+            tmpBoard:=Board;
+            tmpBoard[pole.X-1,pole.y-2]:=tmpBoard[pole.X,pole.Y];
+            tmpBoard[pole.X,pole.Y]:=nil;
+            if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+             begin
             SetLength(ruchy, Length(ruchy)+1);
             ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y-2].pole;
+            end;
         end
         else
         begin
            if Board[pole.X-1, pole.Y-2].kolor<>kolor then
            begin
+               tmpBoard:=Board;
+               tmpBoard[pole.X-1,pole.y-2]:=tmpBoard[pole.X,pole.Y];
+               tmpBoard[pole.X,pole.Y]:=nil;
+               if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                begin
                SetLength(ruchy, Length(ruchy)+1);
                ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y-2].pole;
+               end;
            end;
         end;
     end;
@@ -1052,15 +1343,27 @@ begin
     begin
         if Board[pole.X+2, pole.Y+1]=nil then
         begin
+            tmpBoard:=Board;
+            tmpBoard[pole.X+2,pole.y+1]:=tmpBoard[pole.X,pole.Y];
+            tmpBoard[pole.X,pole.Y]:=nil;
+            if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+             begin
             SetLength(ruchy, Length(ruchy)+1);
             ruchy[High(ruchy)]:=DaneBoard[pole.X+2, pole.Y+1].pole;
+            end;
         end
         else
         begin
            if Board[pole.X+2, pole.Y+1].kolor<>kolor then
            begin
+               tmpBoard:=Board;
+               tmpBoard[pole.X+2,pole.y+1]:=tmpBoard[pole.X,pole.Y];
+               tmpBoard[pole.X,pole.Y]:=nil;
+               if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                begin
                SetLength(ruchy, Length(ruchy)+1);
                ruchy[High(ruchy)]:=DaneBoard[pole.X+2, pole.Y+1].pole;
+               end;
            end;
         end;
     end;
@@ -1070,15 +1373,27 @@ begin
     begin
         if Board[pole.X-2, pole.Y+1]=nil then
         begin
+            tmpBoard:=Board;
+            tmpBoard[pole.X-2,pole.y+1]:=tmpBoard[pole.X,pole.Y];
+            tmpBoard[pole.X,pole.Y]:=nil;
+            if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+             begin
             SetLength(ruchy, Length(ruchy)+1);
             ruchy[High(ruchy)]:=DaneBoard[pole.X-2, pole.Y+1].pole;
+            end;
         end
         else
         begin
            if Board[pole.X-2, pole.Y+1].kolor<>kolor then
            begin
+               tmpBoard:=Board;
+               tmpBoard[pole.X-2,pole.y+1]:=tmpBoard[pole.X,pole.Y];
+               tmpBoard[pole.X,pole.Y]:=nil;
+               if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                begin
                SetLength(ruchy, Length(ruchy)+1);
                ruchy[High(ruchy)]:=DaneBoard[pole.X-2, pole.Y+1].pole;
+               end;
            end;
         end;
     end;
@@ -1088,15 +1403,27 @@ begin
     begin
         if Board[pole.X+1, pole.Y-2]=nil then
         begin
+            tmpBoard:=Board;
+            tmpBoard[pole.X+1,pole.y-2]:=tmpBoard[pole.X,pole.Y];
+            tmpBoard[pole.X,pole.Y]:=nil;
+            if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+             begin
             SetLength(ruchy, Length(ruchy)+1);
             ruchy[High(ruchy)]:=DaneBoard[pole.X+1, pole.Y-2].pole;
+            end;
         end
         else
         begin
            if Board[pole.X+1, pole.Y-2].kolor<>kolor then
            begin
+               tmpBoard:=Board;
+               tmpBoard[pole.X+1,pole.y-2]:=tmpBoard[pole.X,pole.Y];
+               tmpBoard[pole.X,pole.Y]:=nil;
+               if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                begin
                SetLength(ruchy, Length(ruchy)+1);
                ruchy[High(ruchy)]:=DaneBoard[pole.X+1, pole.Y-2].pole;
+               end;
            end;
         end;
     end;
@@ -1106,15 +1433,27 @@ begin
     begin
         if Board[pole.X-1, pole.Y+2]=nil then
         begin
+            tmpBoard:=Board;
+            tmpBoard[pole.X-1,pole.y+2]:=tmpBoard[pole.X,pole.Y];
+            tmpBoard[pole.X,pole.Y]:=nil;
+            if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+             begin
             SetLength(ruchy, Length(ruchy)+1);
             ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y+2].pole;
+            end;
         end
         else
         begin
            if Board[pole.X-1, pole.Y+2].kolor<>kolor then
            begin
+               tmpBoard:=Board;
+               tmpBoard[pole.X-1,pole.y+2]:=tmpBoard[pole.X,pole.Y];
+               tmpBoard[pole.X,pole.Y]:=nil;
+               if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                begin
                SetLength(ruchy, Length(ruchy)+1);
                ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y+2].pole;
+               end;
            end;
         end;
     end;
@@ -1124,15 +1463,27 @@ begin
     begin
         if Board[pole.X+2, pole.Y-1]=nil then
         begin
+            tmpBoard:=Board;
+            tmpBoard[pole.X+2,pole.y-1]:=tmpBoard[pole.X,pole.Y];
+            tmpBoard[pole.X,pole.Y]:=nil;
+            if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+             begin
             SetLength(ruchy, Length(ruchy)+1);
             ruchy[High(ruchy)]:=DaneBoard[pole.X+2, pole.Y-1].pole;
+            end;
         end
         else
         begin
            if Board[pole.X+2, pole.Y-1].kolor<>kolor then
            begin
+               tmpBoard:=Board;
+               tmpBoard[pole.X+2,pole.y-1]:=tmpBoard[pole.X,pole.Y];
+               tmpBoard[pole.X,pole.Y]:=nil;
+               if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                begin
                SetLength(ruchy, Length(ruchy)+1);
                ruchy[High(ruchy)]:=DaneBoard[pole.X+2, pole.Y-1].pole;
+               end;
            end;
         end;
     end;
@@ -1142,15 +1493,27 @@ begin
     begin
         if Board[pole.X-2, pole.Y-1]=nil then
         begin
+            tmpBoard:=Board;
+            tmpBoard[pole.X-2,pole.y-1]:=tmpBoard[pole.X,pole.Y];
+            tmpBoard[pole.X,pole.Y]:=nil;
+            if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+             begin
             SetLength(ruchy, Length(ruchy)+1);
             ruchy[High(ruchy)]:=DaneBoard[pole.X-2, pole.Y-1].pole;
+            end;
         end
         else
         begin
            if Board[pole.X-2, pole.Y-1].kolor<>kolor then
            begin
+               tmpBoard:=Board;
+               tmpBoard[pole.X-2,pole.y-1]:=tmpBoard[pole.X,pole.Y];
+               tmpBoard[pole.X,pole.Y]:=nil;
+               if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                begin
                SetLength(ruchy, Length(ruchy)+1);
                ruchy[High(ruchy)]:=DaneBoard[pole.X-2, pole.Y-1].pole;
+               end;
            end;
         end;
     end;
@@ -1172,16 +1535,28 @@ begin
 
       if Board[pole.X-i, pole.Y-i]=nil then
       begin
-         SetLength(ruchy, Length(ruchy)+1);
-         ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y-i].pole;
+          tmpBoard:=Board;
+          tmpBoard[pole.X-i,pole.y-i]:=tmpBoard[pole.X,pole.Y];
+          tmpBoard[pole.X,pole.Y]:=nil;
+          if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+           begin
+          SetLength(ruchy, Length(ruchy)+1);
+          ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y-i].pole;
+          end;
       end
       else
       begin
          if Board[pole.X-i, pole.Y-i].kolor=kolor then begin Break; end
          else
          begin
-              SetLength(ruchy, Length(ruchy)+1);
-              ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y-i].pole;
+         tmpBoard:=Board;
+         tmpBoard[pole.X-i,pole.y-i]:=tmpBoard[pole.X,pole.Y];
+         tmpBoard[pole.X,pole.Y]:=nil;
+         if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+          begin
+         SetLength(ruchy, Length(ruchy)+1);
+         ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y-i].pole;
+         end;
               Break;
          end;
       end;
@@ -1194,16 +1569,28 @@ begin
 
       if Board[pole.X-i, pole.Y+i]=nil then
       begin
-         SetLength(ruchy, Length(ruchy)+1);
-         ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y+i].pole;
+          tmpBoard:=Board;
+          tmpBoard[pole.X-i,pole.y+i]:=tmpBoard[pole.X,pole.Y];
+          tmpBoard[pole.X,pole.Y]:=nil;
+          if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+           begin
+          SetLength(ruchy, Length(ruchy)+1);
+          ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y+i].pole;
+          end;
       end
       else
       begin
          if Board[pole.X-i, pole.Y+i].kolor=kolor then begin Break; end
          else
          begin
-              SetLength(ruchy, Length(ruchy)+1);
-              ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y+i].pole;
+         tmpBoard:=Board;
+         tmpBoard[pole.X-i,pole.y+i]:=tmpBoard[pole.X,pole.Y];
+         tmpBoard[pole.X,pole.Y]:=nil;
+         if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+          begin
+         SetLength(ruchy, Length(ruchy)+1);
+         ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y+i].pole;
+         end;
               Break;
          end;
       end;
@@ -1216,16 +1603,28 @@ begin
 
       if Board[pole.X+i, pole.Y-i]=nil then
       begin
-         SetLength(ruchy, Length(ruchy)+1);
-         ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y-i].pole;
+          tmpBoard:=Board;
+          tmpBoard[pole.X+i,pole.y-i]:=tmpBoard[pole.X,pole.Y];
+          tmpBoard[pole.X,pole.Y]:=nil;
+          if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+           begin
+          SetLength(ruchy, Length(ruchy)+1);
+          ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y-i].pole;
+          end;
       end
       else
       begin
          if Board[pole.X+i, pole.Y-i].kolor=kolor then begin Break end
          else
          begin
-              SetLength(ruchy, Length(ruchy)+1);
-              ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y-i].pole;
+         tmpBoard:=Board;
+         tmpBoard[pole.X+i,pole.y-i]:=tmpBoard[pole.X,pole.Y];
+         tmpBoard[pole.X,pole.Y]:=nil;
+         if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+          begin
+         SetLength(ruchy, Length(ruchy)+1);
+         ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y-i].pole;
+         end;
               Break;
          end;
       end;
@@ -1238,16 +1637,28 @@ begin
 
       if Board[pole.X+i, pole.Y+i]=nil then
       begin
-         SetLength(ruchy, Length(ruchy)+1);
-         ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y+i].pole;
+          tmpBoard:=Board;
+          tmpBoard[pole.X+i,pole.y+i]:=tmpBoard[pole.X,pole.Y];
+          tmpBoard[pole.X,pole.Y]:=nil;
+          if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+           begin
+          SetLength(ruchy, Length(ruchy)+1);
+          ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y+i].pole;
+          end;
       end
       else
       begin
          if Board[pole.X+i, pole.Y+i].kolor=kolor then begin Break end
          else
          begin
-              SetLength(ruchy, Length(ruchy)+1);
-              ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y+i].pole;
+         tmpBoard:=Board;
+         tmpBoard[pole.X+i,pole.y+i]:=tmpBoard[pole.X,pole.Y];
+         tmpBoard[pole.X,pole.Y]:=nil;
+         if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+          begin
+         SetLength(ruchy, Length(ruchy)+1);
+         ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y+i].pole;
+         end;
               Break;
          end;
       end;
@@ -1265,16 +1676,28 @@ begin
                 begin
                      if Board[pole.X, pole.Y+i]=nil then
                       begin
-                           SetLength(ruchy, Length(ruchy)+1);
-                           ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y+i].pole;
+                          tmpBoard:=Board;
+                          tmpBoard[pole.X,pole.y+i]:=tmpBoard[pole.X,pole.Y];
+                          tmpBoard[pole.X,pole.Y]:=nil;
+                          if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                           begin
+                          SetLength(ruchy, Length(ruchy)+1);
+                          ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y+i].pole;
+                          end;
                       end
                      else
                      begin
                            if Board[pole.X, pole.Y+i].kolor = kolor then begin Break; end
                            else
                             begin
-                              SetLength(ruchy, Length(ruchy)+1);
-                              ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y+i].pole;
+                            tmpBoard:=Board;
+                            tmpBoard[pole.X,pole.y+i]:=tmpBoard[pole.X,pole.Y];
+                            tmpBoard[pole.X,pole.Y]:=nil;
+                            if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                             begin
+                            SetLength(ruchy, Length(ruchy)+1);
+                            ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y+i].pole;
+                            end;
                               Break;
                             end;
                      end;
@@ -1289,16 +1712,28 @@ begin
                 begin
                      if Board[pole.X, pole.Y-i]=nil then
                       begin
-                           SetLength(ruchy, Length(ruchy)+1);
-                           ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y-i].pole;
+                          tmpBoard:=Board;
+                          tmpBoard[pole.X,pole.y-i]:=tmpBoard[pole.X,pole.Y];
+                          tmpBoard[pole.X,pole.Y]:=nil;
+                          if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                           begin
+                          SetLength(ruchy, Length(ruchy)+1);
+                          ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y-i].pole;
+                          end;
                       end
                      else
                      begin
                            if Board[pole.X, pole.Y-i].kolor = kolor then begin Break; end
                            else
                            begin
-                              SetLength(ruchy, Length(ruchy)+1);
-                              ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y-i].pole;
+                           tmpBoard:=Board;
+                           tmpBoard[pole.X,pole.y-i]:=tmpBoard[pole.X,pole.Y];
+                           tmpBoard[pole.X,pole.Y]:=nil;
+                           if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                            begin
+                           SetLength(ruchy, Length(ruchy)+1);
+                           ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y-i].pole;
+                           end;
                               Break;
                             end;
                      end;
@@ -1313,16 +1748,28 @@ begin
                 begin
                      if Board[pole.X+i, pole.Y]=nil then
                       begin
-                           SetLength(ruchy, Length(ruchy)+1);
-                           ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y].pole;
+                          tmpBoard:=Board;
+                          tmpBoard[pole.X+i,pole.y]:=tmpBoard[pole.X,pole.Y];
+                          tmpBoard[pole.X,pole.Y]:=nil;
+                          if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                           begin
+                          SetLength(ruchy, Length(ruchy)+1);
+                          ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y].pole;
+                          end;
                       end
                      else
                      begin
                            if Board[pole.X+i, pole.Y].kolor = kolor then begin Break; end
                            else
                            begin
-                              SetLength(ruchy, Length(ruchy)+1);
-                              ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y].pole;
+                           tmpBoard:=Board;
+                           tmpBoard[pole.X+i,pole.y]:=tmpBoard[pole.X,pole.Y];
+                           tmpBoard[pole.X,pole.Y]:=nil;
+                           if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                            begin
+                           SetLength(ruchy, Length(ruchy)+1);
+                           ruchy[High(ruchy)]:=DaneBoard[pole.X+i, pole.Y].pole;
+                           end;
                               Break;
                             end;
                      end;
@@ -1336,16 +1783,28 @@ begin
                 begin
                      if Board[pole.X-i, pole.Y]=nil then
                       begin
-                           SetLength(ruchy, Length(ruchy)+1);
-                           ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y].pole;
+                          tmpBoard:=Board;
+                          tmpBoard[pole.X-i,pole.y]:=tmpBoard[pole.X,pole.Y];
+                          tmpBoard[pole.X,pole.Y]:=nil;
+                          if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                           begin
+                          SetLength(ruchy, Length(ruchy)+1);
+                          ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y].pole;
+                          end;
                       end
                      else
                      begin
                            if Board[pole.X-i, pole.Y].kolor = kolor then begin Break; end
                            else
                            begin
-                              SetLength(ruchy, Length(ruchy)+1);
-                              ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y].pole;
+                           tmpBoard:=Board;
+                           tmpBoard[pole.X-i,pole.y]:=tmpBoard[pole.X,pole.Y];
+                           tmpBoard[pole.X,pole.Y]:=nil;
+                           if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                            begin
+                           SetLength(ruchy, Length(ruchy)+1);
+                           ruchy[High(ruchy)]:=DaneBoard[pole.X-i, pole.Y].pole;
+                           end;
                               Break;
                             end;
                      end;
@@ -1360,7 +1819,7 @@ begin
 
 {SPRAWDZAMY MOZLIWE RUCHY DLA KROLA}
 
-if bierka = 'krol' then        {dorobic roszade}
+if bierka = 'krol' then
  begin
 
   {-- ruchy wiezy - pionowo poziomo --}
@@ -1369,15 +1828,27 @@ if bierka = 'krol' then        {dorobic roszade}
                 begin
                      if Board[pole.X, pole.Y+1]=nil then
                       begin
-                           SetLength(ruchy, Length(ruchy)+1);
-                           ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y+1].pole;
+                          tmpBoard:=Board;
+                          tmpBoard[pole.X,pole.y+1]:=tmpBoard[pole.X,pole.Y];
+                          tmpBoard[pole.X,pole.Y]:=nil;
+                          if CzyCosAtakujePole(DaneBoard[pole.X,pole.Y+1].pole,'ruch',kolor,@tmpBoard)=false then
+                           begin
+                          SetLength(ruchy, Length(ruchy)+1);
+                          ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y+1].pole;
+                          end;
                       end
                      else
                      begin
                            if Board[pole.X, pole.Y+1].kolor <> kolor then
                             begin
-                              SetLength(ruchy, Length(ruchy)+1);
-                              ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y+1].pole;
+                                tmpBoard:=Board;
+                                tmpBoard[pole.X,pole.y+1]:=tmpBoard[pole.X,pole.Y];
+                                tmpBoard[pole.X,pole.Y]:=nil;
+                                if CzyCosAtakujePole(DaneBoard[pole.X,pole.Y+1].pole,'ruch',kolor,@tmpBoard)=false then
+                                 begin
+                                SetLength(ruchy, Length(ruchy)+1);
+                                ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y+1].pole;
+                                end;
                             end;
                      end;
                 end;
@@ -1387,15 +1858,27 @@ if bierka = 'krol' then        {dorobic roszade}
                 begin
                      if Board[pole.X, pole.Y-1]=nil then
                       begin
-                           SetLength(ruchy, Length(ruchy)+1);
-                           ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y-1].pole;
+                          tmpBoard:=Board;
+                          tmpBoard[pole.X,pole.y-1]:=tmpBoard[pole.X,pole.Y];
+                          tmpBoard[pole.X,pole.Y]:=nil;
+                          if CzyCosAtakujePole(DaneBoard[pole.X,pole.Y-1].pole,'ruch',kolor,@tmpBoard)=false then
+                           begin
+                          SetLength(ruchy, Length(ruchy)+1);
+                          ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y-1].pole;
+                          end;
                       end
                      else
                      begin
                            if Board[pole.X, pole.Y-1].kolor <> kolor then
                            begin
-                              SetLength(ruchy, Length(ruchy)+1);
-                              ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y-1].pole;
+                               tmpBoard:=Board;
+                               tmpBoard[pole.X,pole.y-1]:=tmpBoard[pole.X,pole.Y];
+                               tmpBoard[pole.X,pole.Y]:=nil;
+                               if CzyCosAtakujePole(DaneBoard[pole.X,pole.Y-1].pole,'ruch',kolor,@tmpBoard)=false then
+                                begin
+                               SetLength(ruchy, Length(ruchy)+1);
+                               ruchy[High(ruchy)]:=DaneBoard[pole.X, pole.Y-1].pole;
+                               end;
                             end;
                      end;
                 end;
@@ -1405,15 +1888,27 @@ if bierka = 'krol' then        {dorobic roszade}
                 begin
                      if Board[pole.X+1, pole.Y]=nil then
                       begin
-                           SetLength(ruchy, Length(ruchy)+1);
-                           ruchy[High(ruchy)]:=DaneBoard[pole.X+1, pole.Y].pole;
+                          tmpBoard:=Board;
+                          tmpBoard[pole.X+1,pole.y]:=tmpBoard[pole.X,pole.Y];
+                          tmpBoard[pole.X,pole.Y]:=nil;
+                          if CzyCosAtakujePole(DaneBoard[pole.X+1,pole.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                           begin
+                          SetLength(ruchy, Length(ruchy)+1);
+                          ruchy[High(ruchy)]:=DaneBoard[pole.X+1, pole.Y].pole;
+                          end;
                       end
                      else
                      begin
                            if Board[pole.X+1, pole.Y].kolor <> kolor then
                            begin
-                              SetLength(ruchy, Length(ruchy)+1);
-                              ruchy[High(ruchy)]:=DaneBoard[pole.X+1, pole.Y].pole;
+                               tmpBoard:=Board;
+                               tmpBoard[pole.X+1,pole.y]:=tmpBoard[pole.X,pole.Y];
+                               tmpBoard[pole.X,pole.Y]:=nil;
+                               if CzyCosAtakujePole(DaneBoard[pole.X+1,pole.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                                begin
+                               SetLength(ruchy, Length(ruchy)+1);
+                               ruchy[High(ruchy)]:=DaneBoard[pole.X+1, pole.Y].pole;
+                               end;
                             end;
                      end;
                 end;
@@ -1424,15 +1919,27 @@ if bierka = 'krol' then        {dorobic roszade}
                 begin
                      if Board[pole.X-1, pole.Y]=nil then
                       begin
-                           SetLength(ruchy, Length(ruchy)+1);
-                           ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y].pole;
+                          tmpBoard:=Board;
+                          tmpBoard[pole.X-1,pole.y]:=tmpBoard[pole.X,pole.Y];
+                          tmpBoard[pole.X,pole.Y]:=nil;
+                          if CzyCosAtakujePole(DaneBoard[pole.X-1,pole.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                           begin
+                          SetLength(ruchy, Length(ruchy)+1);
+                          ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y].pole;
+                          end;
                       end
                      else
                      begin
                            if Board[pole.X-1, pole.Y].kolor <> kolor then
                            begin
-                              SetLength(ruchy, Length(ruchy)+1);
-                              ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y].pole;
+                               tmpBoard:=Board;
+                               tmpBoard[pole.X-1,pole.y]:=tmpBoard[pole.X,pole.Y];
+                               tmpBoard[pole.X,pole.Y]:=nil;
+                               if CzyCosAtakujePole(DaneBoard[pole.X-1,pole.Y].pole,'ruch',kolor,@tmpBoard)=false then
+                                begin
+                               SetLength(ruchy, Length(ruchy)+1);
+                               ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y].pole;
+                               end;
                             end;
                      end;
                 end;
@@ -1446,15 +1953,27 @@ if bierka = 'krol' then        {dorobic roszade}
 
       if Board[pole.X-1, pole.Y-1]=nil then
       begin
-         SetLength(ruchy, Length(ruchy)+1);
-         ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y-1].pole;
+                          tmpBoard:=Board;
+                          tmpBoard[pole.X-1,pole.y-1]:=tmpBoard[pole.X,pole.Y];
+                          tmpBoard[pole.X,pole.Y]:=nil;
+                          if CzyCosAtakujePole(DaneBoard[pole.X-1,pole.Y-1].pole,'ruch',kolor,@tmpBoard)=false then
+                           begin
+                          SetLength(ruchy, Length(ruchy)+1);
+                          ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y-1].pole;
+                          end;
       end
       else
       begin
          if Board[pole.X-1, pole.Y-1].kolor<>kolor then
          begin
-              SetLength(ruchy, Length(ruchy)+1);
-              ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y-1].pole;
+             tmpBoard:=Board;
+             tmpBoard[pole.X-1,pole.y-1]:=tmpBoard[pole.X,pole.Y];
+             tmpBoard[pole.X,pole.Y]:=nil;
+             if CzyCosAtakujePole(DaneBoard[pole.X-1,pole.Y-1].pole,'ruch',kolor,@tmpBoard)=false then
+              begin
+             SetLength(ruchy, Length(ruchy)+1);
+             ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y-1].pole;
+             end;
          end;
       end;
       end;
@@ -1464,15 +1983,27 @@ if bierka = 'krol' then        {dorobic roszade}
 
       if Board[pole.X-1, pole.Y+1]=nil then
       begin
-         SetLength(ruchy, Length(ruchy)+1);
-         ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y+1].pole;
+          tmpBoard:=Board;
+          tmpBoard[pole.X-1,pole.y+1]:=tmpBoard[pole.X,pole.Y];
+          tmpBoard[pole.X,pole.Y]:=nil;
+          if CzyCosAtakujePole(DaneBoard[pole.X-1,pole.Y+1].pole,'ruch',kolor,@tmpBoard)=false then
+           begin
+          SetLength(ruchy, Length(ruchy)+1);
+          ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y+1].pole;
+          end;
       end
       else
       begin
          if Board[pole.X-1, pole.Y+1].kolor<>kolor then
          begin
-              SetLength(ruchy, Length(ruchy)+1);
-              ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y+1].pole;
+             tmpBoard:=Board;
+             tmpBoard[pole.X-1,pole.y+1]:=tmpBoard[pole.X,pole.Y];
+             tmpBoard[pole.X,pole.Y]:=nil;
+             if CzyCosAtakujePole(DaneBoard[pole.X-1,pole.Y+1].pole,'ruch',kolor,@tmpBoard)=false then
+              begin
+             SetLength(ruchy, Length(ruchy)+1);
+             ruchy[High(ruchy)]:=DaneBoard[pole.X-1, pole.Y+1].pole;
+             end;
          end;
       end;
 
@@ -1484,15 +2015,27 @@ if bierka = 'krol' then        {dorobic roszade}
 
       if Board[pole.X+1, pole.Y-1]=nil then
       begin
-         SetLength(ruchy, Length(ruchy)+1);
-         ruchy[High(ruchy)]:=DaneBoard[pole.X+1, pole.Y-1].pole;
+          tmpBoard:=Board;
+          tmpBoard[pole.X+1,pole.y-1]:=tmpBoard[pole.X,pole.Y];
+          tmpBoard[pole.X,pole.Y]:=nil;
+          if CzyCosAtakujePole(DaneBoard[pole.X+1,pole.Y-1].pole,'ruch',kolor,@tmpBoard)=false then
+           begin
+          SetLength(ruchy, Length(ruchy)+1);
+          ruchy[High(ruchy)]:=DaneBoard[pole.X+1, pole.Y-1].pole;
+          end;
       end
       else
       begin
          if Board[pole.X+1, pole.Y-1].kolor<>kolor then
          begin
-              SetLength(ruchy, Length(ruchy)+1);
-              ruchy[High(ruchy)]:=DaneBoard[pole.X+1, pole.Y-1].pole;
+             tmpBoard:=Board;
+             tmpBoard[pole.X+1,pole.y-1]:=tmpBoard[pole.X,pole.Y];
+             tmpBoard[pole.X,pole.Y]:=nil;
+             if CzyCosAtakujePole(DaneBoard[pole.X+1,pole.Y-1].pole,'ruch',kolor,@tmpBoard)=false then
+              begin
+             SetLength(ruchy, Length(ruchy)+1);
+             ruchy[High(ruchy)]:=DaneBoard[pole.X+1, pole.Y-1].pole;
+             end;
          end;
       end;
 
@@ -1503,15 +2046,27 @@ if bierka = 'krol' then        {dorobic roszade}
 
       if Board[pole.X+1, pole.Y+1]=nil then
       begin
-         SetLength(ruchy, Length(ruchy)+1);
-         ruchy[High(ruchy)]:=DaneBoard[pole.X+1, pole.Y+1].pole;
+          tmpBoard:=Board;
+          tmpBoard[pole.X+1,pole.y+1]:=tmpBoard[pole.X,pole.Y];
+          tmpBoard[pole.X,pole.Y]:=nil;
+          if CzyCosAtakujePole(DaneBoard[pole.X+1,pole.Y+1].pole,'ruch',kolor,@tmpBoard)=false then
+           begin
+          SetLength(ruchy, Length(ruchy)+1);
+          ruchy[High(ruchy)]:=DaneBoard[pole.X+1, pole.Y+1].pole;
+          end;
       end
       else
       begin
          if Board[pole.X+1, pole.Y+1].kolor<>kolor then
          begin
-              SetLength(ruchy, Length(ruchy)+1);
-              ruchy[High(ruchy)]:=DaneBoard[pole.X+1, pole.Y+1].pole;
+             tmpBoard:=Board;
+             tmpBoard[pole.X+1,pole.y+1]:=tmpBoard[pole.X,pole.Y];
+             tmpBoard[pole.X,pole.Y]:=nil;
+             if CzyCosAtakujePole(DaneBoard[pole.X+1,pole.Y+1].pole,'ruch',kolor,@tmpBoard)=false then
+              begin
+             SetLength(ruchy, Length(ruchy)+1);
+             ruchy[High(ruchy)]:=DaneBoard[pole.X+1, pole.Y+1].pole;
+             end;
          end;
       end;
 
@@ -1519,14 +2074,1021 @@ if bierka = 'krol' then        {dorobic roszade}
 
   {-----------------------------------}
 
+  {-- sprawdzamy roszade --}
+
+  if (WyjsciowePole='E1') or (WyjsciowePole='E8') then
+  begin
+
+        if WyjsciowePole='E1' then //BIALE
+        begin
+             //najpierw sprawdzamy czy sie krol ruszal
+
+              if CzySieRuszal(pole)=false then //jezeli krol sie nie ruszal to sprawdzamy dalej
+              begin
+
+                   tmp:=ZnajdzIJbyPole('H1');
+                   if (Board[tmp.x,tmp.y]<>nil) and (Board[tmp.x,tmp.y].rodzaj='wieza') and (Board[tmp.x,tmp.y].kolor=kolor) then
+                   begin
+
+                   if CzySieRuszal(ZnajdzIJbyPole('H1'))=false then //jezeli wieza krotka sie nie ruszala
+                   begin
+                      tmp:=ZnajdzIjbyPole('F1');
+                      tmp2:=ZnajdzIJbyPole('G1');
+                    if (Board[tmp.X,tmp.Y]=nil) and (Board[tmp2.X,tmp2.Y]=nil) then
+                    begin
+                        if (CzyCosAtakujePole('F1','roszada',GramKolorem,@Board)=false) and (CzyCosAtakujePole('G1', 'roszada', GramKolorem, @Board)=false) then
+                        begin
+                              SetLength(ruchy, Length(ruchy)+1);
+                              ruchy[High(ruchy)]:='G1';
+                        end;
+                    end;
+
+                   end;
+
+                   end;
+
+                   tmp:=ZnajdzIJbyPole('A1');
+                   if (Board[tmp.x,tmp.y]<>nil) and (Board[tmp.x,tmp.y].rodzaj='wieza') and (Board[tmp.x,tmp.y].kolor=kolor) then
+                   begin
+
+                   if CzySieRuszal(ZnajdzIJbyPole('A1'))=false then //jezeli wieza dluga sie nie ruszala
+                   begin
+
+                   tmp:=ZnajdzIjbyPole('D1');
+                   tmp2:=ZnajdzIJbyPole('C1');
+                    if (Board[tmp.X,tmp.Y]=nil) and (Board[tmp2.X,tmp2.Y]=nil) then
+                    begin
+                        if (CzyCosAtakujePole('D1','roszada', GramKolorem,@Board)=false) and (CzyCosAtakujePole('C1', 'roszada', GramKolorem, @Board)=false) then
+                        begin
+                              SetLength(ruchy, Length(ruchy)+1);
+                              ruchy[High(ruchy)]:='C1';
+                        end;
+                    end;
+
+                   end;
+                   end;
+              end;
+
+
+        end;
+
+        {konczymy sprawdzanie roszady dla bialych}
+
+      if DaneBoard[pole.X, pole.Y].pole='E8' then //CZARNE
+      begin
+           //najpierw sprawdzamy czy sie krol ruszal
+
+            if CzySieRuszal(pole)=false then //jezeli krol sie nie ruszal to sprawdzamy dalej
+            begin
+
+                   tmp:=ZnajdzIJbyPole('H8');
+                   if (Board[tmp.x,tmp.y]<>nil) and (Board[tmp.x,tmp.y].rodzaj='wieza') and (Board[tmp.x,tmp.y].kolor=kolor) then
+                   begin
+
+                 if CzySieRuszal(ZnajdzIJbyPole('H8'))=false then //jezeli wieza krotka sie nie ruszala
+                 begin
+                    tmp:=ZnajdzIjbyPole('F8');
+                    tmp2:=ZnajdzIJbyPole('G8');
+                  if (Board[tmp.X,tmp.Y]=nil) and (Board[tmp2.X,tmp2.Y]=nil) then
+                  begin
+                      if (CzyCosAtakujePole('F8','roszada', GramKolorem, @Board)=false) and (CzyCosAtakujePole('G8', 'roszada', GramKolorem, @Board)=false) then
+                      begin
+                            SetLength(ruchy, Length(ruchy)+1);
+                            ruchy[High(ruchy)]:='G8';
+                      end;
+                  end;
+                  end;
+
+                 end;
+
+
+                   tmp:=ZnajdzIJbyPole('A8');
+                   if (Board[tmp.x,tmp.y]<>nil) and (Board[tmp.x,tmp.y].rodzaj='wieza') and (Board[tmp.x,tmp.y].kolor=kolor) then
+                   begin
+                 if CzySieRuszal(ZnajdzIJbyPole('A8'))=false then //jezeli wieza dluga sie nie ruszala
+                 begin
+
+                 tmp:=ZnajdzIjbyPole('D8');
+                 tmp2:=ZnajdzIJbyPole('C8');
+                  if (Board[tmp.X,tmp.Y]=nil) and (Board[tmp2.X,tmp2.Y]=nil) then
+                  begin
+                      if (CzyCosAtakujePole('D8','roszada', GramKolorem, @Board)=false) and (CzyCosAtakujePole('C8', 'roszada', GramKolorem, @Board)=false) then
+                      begin
+                            SetLength(ruchy, Length(ruchy)+1);
+                            ruchy[High(ruchy)]:='C8';
+                      end;
+                  end;
+                  end;
+
+                 end;
+            end;
+
+
+      end;
+
+{---}
+
+
+
+  end;
+
+  {------------------------}
+
     result:=ruchy;
+  end;
 
  end;
+
+
+function TForm1.CzyCosBroniPole(pozycja,rodzaj,MojKolor:string;szachownica:Pointer):boolean;
+var
+p:TPoint;
+i,j:integer;
+wynik:boolean;
+B:^TBoard;
+begin
+wynik:=false;
+p:=ZnajdzIJbyPole(pozycja);
+
+B:=szachownica;
+
+//sprawdzamy na lewo od pola
+   for i:=1 to 8 do
+   begin
+      if p.Y-i<1 then Break;
+
+      if B^[p.X, p.Y-i]<> nil then
+      begin
+          if B^[p.X, p.Y-i].kolor = MojKolor then begin
+             if (B^[p.X, p.Y-i].rodzaj='wieza') or (B^[p.X, p.Y-i].rodzaj='hetman') then begin wynik:=true; end;
+             Break;
+      end;
+     end;
+   end;
+
+   //sprawdzamy na prawo od pola
+      for i:=1 to 8 do
+      begin
+         if p.Y+i>8 then Break;
+
+         if B^[p.X, p.Y+i]<> nil then
+         begin
+             if B^[p.X, p.Y+i].kolor = MojKolor then begin
+                if (B^[p.X, p.Y+i].rodzaj='wieza') or (B^[p.X, p.Y+i].rodzaj='hetman') then begin wynik:=true; Break; end;
+                Break;
+         end;
+       end;
+      end;
+
+      //sprawdzamy w gore od pola
+         for i:=1 to 8 do
+         begin
+            if p.X-i<1 then Break;
+
+            if B^[p.X-i, p.Y]<> nil then
+            begin
+                if B^[p.X-i, p.Y].kolor = MojKolor then begin
+                   if (B^[p.X-i, p.Y].rodzaj='wieza') or (B^[p.X-i, p.Y].rodzaj='hetman') then begin wynik:=true; Break; end;
+                   Break;
+            end;
+           end;
+         end;
+
+         //sprawdzamy w dol od pola
+            for i:=1 to 8 do
+            begin
+               if p.X+i>8 then Break;
+
+               if B^[p.X+i, p.Y]<> nil then
+               begin
+                   if B^[p.X+i, p.Y].kolor = MojKolor then begin
+                      if (B^[p.X+i, p.Y].rodzaj='wieza') or (B^[p.X+i, p.Y].rodzaj='hetman') then begin wynik:=true; Break; end;
+                      Break;
+               end;
+            end;
+            end;
+
+         //sprawdzamy na lewo w gore od pola
+            for i:=1 to 8 do
+            begin
+               if (p.X-i<1) or (p.Y-i<1) then Break;
+
+               if B^[p.X-i, p.Y-i]<> nil then
+               begin
+                   if B^[p.X-i, p.Y-i].kolor = MojKolor then begin
+                      if (B^[p.X-i, p.Y-i].rodzaj='goniec') or (B^[p.X-i, p.Y-i].rodzaj='hetman') then
+                      begin wynik:=true; Break; end;
+                      Break;
+               end;
+               end;
+            end;
+
+            //sprawdzamy na prawo w gore od pola
+               for i:=1 to 8 do
+               begin
+                  if (p.X-i<1) or (p.Y+i>8) then Break;
+
+                  if B^[p.X-i, p.Y+i]<> nil then
+                  begin
+                      if B^[p.X-i, p.Y+i].kolor = MojKolor then begin
+                         if (B^[p.X-i, p.Y+i].rodzaj='goniec') or (B^[p.X-i, p.Y+i].rodzaj='hetman') then begin wynik:=true; Break; end;
+                         Break;
+                  end;
+                  end;
+               end;
+
+               //sprawdzamy na prawo w dol od pola
+                  for i:=1 to 8 do
+                  begin
+                     if (p.X+i>8) or (p.Y+i>8) then Break;
+
+                     if B^[p.X+i, p.Y+i]<> nil then
+                     begin
+                         if B^[p.X+i, p.Y+i].kolor = MojKolor then begin
+                            if (B^[p.X+i, p.Y+i].rodzaj='goniec') or (B^[p.X+i, p.Y+i].rodzaj='hetman') then begin wynik:=true; Break; end;
+                            Break;
+                     end;
+                    end;
+                  end;
+
+                  //sprawdzamy na lewo w dol od pola
+
+                  for i:=1 to 8 do
+                  begin
+                     if (p.X+i>8) or (p.Y-i<1) then Break;
+
+                     if B^[p.X+i, p.Y-i]<> nil then
+                     begin
+                         if B^[p.X+i, p.Y-i].kolor = MojKolor then begin
+                            if (B^[p.X+i, p.Y-i].rodzaj='goniec') or (B^[p.X+i, p.Y-i].rodzaj='hetman') then begin wynik:=true; Break; end;
+                            Break;
+                         end;
+                  end;
+                      end;
+
+//sprawdzamy ataki pionow
+
+
+if (p.X-1>=1) and (p.Y-1>=1) then
+begin
+   if B^[p.X-1, p.Y-1]<>nil then begin
+     if B^[p.X-1, p.Y-1].kolor=MojKolor then
+     begin
+        if B^[p.x-1, p.Y-1].rodzaj='pion' then wynik:=true;
+     end;
+   end;
+end;
+
+if (p.X-1>=1) and (p.Y+1<=8) then
+begin
+   if B^[p.X-1, p.Y+1]<>nil then begin
+     if B^[p.X-1, p.Y+1].kolor=MojKolor then
+     begin
+        if B^[p.x-1, p.Y+1].rodzaj='pion' then wynik:=true;
+     end;
+   end;
+end;
+
+//jezeli nie sprawdzamy roszady to sprawdzamy tez ataki konia
+
+if rodzaj<>'roszada' then
+begin
+
+//sprawdzamy konie
+
+   if (p.X-2>=1) and (p.Y+1<=8) then begin
+if B^[p.X-2,p.Y+1]<>nil then
+begin
+    if B^[p.X-2,p.Y+1].kolor=MojKolor then
+    begin
+       if B^[p.X-2,p.Y+1].rodzaj='skoczek' then wynik:=true;
+    end;
+end;  end;
+
+    if (p.X-1>=1) and (p.Y+2<=8) then begin
+ if B^[p.X-1,p.Y+2]<>nil then
+ begin
+     if B^[p.X-1,p.Y+2].kolor=MojKolor then
+     begin
+        if B^[p.X-1,p.Y+2].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X+1<=8) and (p.Y+2<=8) then begin
+ if B^[p.X+1,p.Y+2]<>nil then
+ begin
+     if B^[p.X+1,p.Y+2].kolor=MojKolor then
+     begin
+        if B^[p.X+1,p.Y+2].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X+2<=8) and (p.Y+1<=8) then begin
+ if B^[p.X+2,p.Y+1]<>nil then
+ begin
+     if B^[p.X+2,p.Y+1].kolor=MojKolor then
+     begin
+        if B^[p.X+2,p.Y+1].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X+2<=8) and (p.Y-1>=1) then begin
+ if B^[p.X+2,p.Y-1]<>nil then
+ begin
+     if B^[p.X+2,p.Y-1].kolor=MojKolor then
+     begin
+        if B^[p.X+2,p.Y-1].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X+1<=8) and (p.Y-2>=1) then begin
+ if B^[p.X+1,p.Y-2]<>nil then
+ begin
+     if B^[p.X+1,p.Y-2].kolor=MojKolor then
+     begin
+        if B^[p.X+1,p.Y-2].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X-1>=1) and (p.Y-2>=1) then begin
+ if B^[p.X-1,p.Y-2]<>nil then
+ begin
+     if B^[p.X-1,p.Y-2].kolor=MojKolor then
+     begin
+        if B^[p.X-1,p.Y-2].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X-2>=1) and (p.Y-1>=1) then begin
+ if B^[p.X-2,p.Y-1]<>nil then
+ begin
+     if B^[p.X-2,p.Y-1].kolor=MojKolor then
+     begin
+        if B^[p.X-2,p.Y-1].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+
+end;
+
+//sprawdzamy czy broni krol
+
+if (B^[p.x-1,p.y]<>nil) and (B^[p.x-1,p.y].rodzaj='krol') and (B^[p.x-1,p.y].kolor=MojKolor) then
+wynik:=True;
+if (B^[p.x+1,p.y]<>nil) and (B^[p.x+1,p.y].rodzaj='krol') and (B^[p.x+1,p.y].kolor=MojKolor) then
+wynik:=True;
+if (B^[p.x,p.y-1]<>nil) and (B^[p.x,p.y-1].rodzaj='krol') and (B^[p.x,p.y-1].kolor=MojKolor) then
+wynik:=True;
+if (B^[p.x,p.y+1]<>nil) and (B^[p.x,p.y+1].rodzaj='krol') and (B^[p.x,p.y+1].kolor=MojKolor) then
+wynik:=True;
+if (B^[p.x-1,p.y-1]<>nil) and (B^[p.x-1,p.y-1].rodzaj='krol') and (B^[p.x-1,p.y-1].kolor=MojKolor) then
+wynik:=True;
+if (B^[p.x-1,p.y+1]<>nil) and (B^[p.x-1,p.y+1].rodzaj='krol') and (B^[p.x-1,p.y+1].kolor=MojKolor) then
+wynik:=True;
+if (B^[p.x+1,p.y-1]<>nil) and (B^[p.x+1,p.y-1].rodzaj='krol') and (B^[p.x+1,p.y-1].kolor=MojKolor) then
+wynik:=True;
+if (B^[p.x+1,p.y+1]<>nil) and (B^[p.x+1,p.y+1].rodzaj='krol') and (B^[p.x+1,p.y+1].kolor=MojKolor) then
+wynik:=True;
+
+      Result:=wynik; //jezeli false to nie broni
 
 end;
 
 
-function TForm1.SprawdzKrolaBialego(pole:TPoint; na:string):boolean; //true - nie atakowany, false - atakowany
+function TForm1.CzyCosAtakujePole(pozycja,rodzaj,MojKolor:string;szachownica:Pointer):boolean;
+var
+p:TPoint;
+i,j:integer;
+wynik:boolean;
+B:^TBoard;
+begin
+wynik:=false;
+p:=ZnajdzIJbyPole(pozycja);
+
+B:=szachownica;
+
+//sprawdzamy na lewo od pola
+   for i:=1 to 8 do
+   begin
+      if p.Y-i<1 then Break;
+
+      if B^[p.X, p.Y-i]<> nil then
+      begin
+          if B^[p.X, p.Y-i].kolor = MojKolor then begin Break; end else
+          begin
+             if (B^[p.X, p.Y-i].rodzaj='wieza') or (B^[p.X, p.Y-i].rodzaj='hetman') then begin wynik:=true; end;
+             Break;
+          end;
+      end;
+
+   end;
+
+   //sprawdzamy na prawo od pola
+      for i:=1 to 8 do
+      begin
+         if p.Y+i>8 then Break;
+
+         if B^[p.X, p.Y+i]<> nil then
+         begin
+             if B^[p.X, p.Y+i].kolor = MojKolor then begin Break; end else
+             begin
+                if (B^[p.X, p.Y+i].rodzaj='wieza') or (B^[p.X, p.Y+i].rodzaj='hetman') then begin wynik:=true; Break; end;
+                Break;
+             end;
+         end;
+
+      end;
+
+      //sprawdzamy w gore od pola
+         for i:=1 to 8 do
+         begin
+            if p.X-i<1 then Break;
+
+            if B^[p.X-i, p.Y]<> nil then
+            begin
+                if B^[p.X-i, p.Y].kolor = MojKolor then begin Break; end else
+                begin
+                   if (B^[p.X-i, p.Y].rodzaj='wieza') or (B^[p.X-i, p.Y].rodzaj='hetman') then begin wynik:=true; Break; end;
+                   Break;
+                end;
+            end;
+
+         end;
+
+         //sprawdzamy w dol od pola
+            for i:=1 to 8 do
+            begin
+               if p.X+i>8 then Break;
+
+               if B^[p.X+i, p.Y]<> nil then
+               begin
+                   if B^[p.X+i, p.Y].kolor = MojKolor then begin Break; end else
+                   begin
+                      if (B^[p.X+i, p.Y].rodzaj='wieza') or (B^[p.X+i, p.Y].rodzaj='hetman') then begin wynik:=true; Break; end;
+                      Break;
+                   end;
+               end;
+
+            end;
+
+         //sprawdzamy na lewo w gore od pola
+            for i:=1 to 8 do
+            begin
+               if (p.X-i<1) or (p.Y-i<1) then Break;
+
+               if B^[p.X-i, p.Y-i]<> nil then
+               begin
+                   if B^[p.X-i, p.Y-i].kolor = MojKolor then begin Break; end else
+                   begin
+                      if (B^[p.X-i, p.Y-i].rodzaj='goniec') or (B^[p.X-i, p.Y-i].rodzaj='hetman') then
+                      begin wynik:=true;
+                          Break;
+                      end;
+                      Break;
+                   end;
+               end;
+
+            end;
+
+            //sprawdzamy na prawo w gore od pola
+               for i:=1 to 8 do
+               begin
+                  if (p.X-i<1) or (p.Y+i>8) then Break;
+
+                  if B^[p.X-i, p.Y+i]<> nil then
+                  begin
+                      if B^[p.X-i, p.Y+i].kolor = MojKolor then begin Break; end else
+                      begin
+                         if (B^[p.X-i, p.Y+i].rodzaj='goniec') or (B^[p.X-i, p.Y+i].rodzaj='hetman') then begin wynik:=true; Break; end;
+                         Break;
+                      end;
+                  end;
+
+               end;
+
+               //sprawdzamy na prawo w dol od pola
+                  for i:=1 to 8 do
+                  begin
+                     if (p.X+i>8) or (p.Y+i>8) then Break;
+
+                     if B^[p.X+i, p.Y+i]<> nil then
+                     begin
+                         if B^[p.X+i, p.Y+i].kolor = MojKolor then begin Break; end else
+                         begin
+                            if (B^[p.X+i, p.Y+i].rodzaj='goniec') or (B^[p.X+i, p.Y+i].rodzaj='hetman') then
+                            begin
+                                wynik:=true;
+                                Break;
+                            end;
+                            Break;
+                         end;
+                     end;
+
+                  end;
+
+                  //sprawdzamy na lewo w dol od pola
+
+                  for i:=1 to 8 do
+                  begin
+                     if (p.X+i>8) or (p.Y-i<1) then Break;
+
+                     if B^[p.X+i, p.Y-i]<> nil then
+                     begin
+                         if B^[p.X+i, p.Y-i].kolor = MojKolor then begin Break; end else
+                         begin
+                            if (B^[p.X+i, p.Y-i].rodzaj='goniec') or (B^[p.X+i, p.Y-i].rodzaj='hetman') then begin wynik:=true; Break; end;
+                            Break;
+                         end;
+                     end;
+
+                  end;
+
+//sprawdzamy ataki pionow
+
+if (p.X-1>=1) and (p.Y-1>=1) then
+begin
+   if B^[p.X-1, p.Y-1]<>nil then begin
+     if B^[p.X-1, p.Y-1].kolor<>MojKolor then
+     begin
+        if B^[p.x-1, p.Y-1].rodzaj='pion' then wynik:=true;
+     end;
+   end;
+end;
+
+if (p.X-1>=1) and (p.Y+1<=8) then
+begin
+   if B^[p.X-1, p.Y+1]<>nil then begin
+     if B^[p.X-1, p.Y+1].kolor<>MojKolor then
+     begin
+        if B^[p.x-1, p.Y+1].rodzaj='pion' then wynik:=true;
+     end;
+   end;
+end;
+
+//jezeli nie sprawdzamy roszady to sprawdzamy tez ataki konia
+
+if rodzaj<>'roszada' then
+begin
+
+//sprawdzamy konie
+
+   if (p.X-2>=1) and (p.Y+1<=8) then begin
+if B^[p.X-2,p.Y+1]<>nil then
+begin
+    if B^[p.X-2,p.Y+1].kolor<>MojKolor then
+    begin
+       if B^[p.X-2,p.Y+1].rodzaj='skoczek' then wynik:=true;
+    end;
+end;  end;
+
+    if (p.X-1>=1) and (p.Y+2<=8) then begin
+ if B^[p.X-1,p.Y+2]<>nil then
+ begin
+     if B^[p.X-1,p.Y+2].kolor<>MojKolor then
+     begin
+        if B^[p.X-1,p.Y+2].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X+1<=8) and (p.Y+2<=8) then begin
+ if B^[p.X+1,p.Y+2]<>nil then
+ begin
+     if B^[p.X+1,p.Y+2].kolor<>MojKolor then
+     begin
+        if B^[p.X+1,p.Y+2].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X+2<=8) and (p.Y+1<=8) then begin
+ if B^[p.X+2,p.Y+1]<>nil then
+ begin
+     if B^[p.X+2,p.Y+1].kolor<>MojKolor then
+     begin
+        if B^[p.X+2,p.Y+1].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X+2<=8) and (p.Y-1>=1) then begin
+ if B^[p.X+2,p.Y-1]<>nil then
+ begin
+     if B^[p.X+2,p.Y-1].kolor<>MojKolor then
+     begin
+        if B^[p.X+2,p.Y-1].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X+1<=8) and (p.Y-2>=1) then begin
+ if B^[p.X+1,p.Y-2]<>nil then
+ begin
+     if B^[p.X+1,p.Y-2].kolor<>MojKolor then
+     begin
+        if B^[p.X+1,p.Y-2].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X-1>=1) and (p.Y-2>=1) then begin
+ if B^[p.X-1,p.Y-2]<>nil then
+ begin
+     if B^[p.X-1,p.Y-2].kolor<>MojKolor then
+     begin
+        if B^[p.X-1,p.Y-2].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X-2>=1) and (p.Y-1>=1) then begin
+ if B^[p.X-2,p.Y-1]<>nil then
+ begin
+     if B^[p.X-2,p.Y-1].kolor<>MojKolor then
+     begin
+        if B^[p.X-2,p.Y-1].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+
+end;
+
+//sprawdzamy czy broni atakuje        //OUT OF BOUNDS!     CZY ABY NA PEWNO JEST OK?
+
+if (B^[p.x-1,p.y]<>nil) and (B^[p.x-1,p.y].rodzaj='krol') and (B^[p.x-1,p.y].kolor=MojKolor) then
+wynik:=True;
+if (B^[p.x+1,p.y]<>nil) and (B^[p.x+1,p.y].rodzaj='krol') and (B^[p.x+1,p.y].kolor=MojKolor) then
+wynik:=True;
+if (B^[p.x,p.y-1]<>nil) and (B^[p.x,p.y-1].rodzaj='krol') and (B^[p.x,p.y-1].kolor=MojKolor) then
+wynik:=True;
+if (B^[p.x,p.y+1]<>nil) and (B^[p.x,p.y+1].rodzaj='krol') and (B^[p.x,p.y+1].kolor=MojKolor) then
+wynik:=True;
+if (B^[p.x-1,p.y-1]<>nil) and (B^[p.x-1,p.y-1].rodzaj='krol') and (B^[p.x-1,p.y-1].kolor=MojKolor) then
+wynik:=True;
+if (B^[p.x-1,p.y+1]<>nil) and (B^[p.x-1,p.y+1].rodzaj='krol') and (B^[p.x-1,p.y+1].kolor=MojKolor) then
+wynik:=True;
+if (B^[p.x+1,p.y-1]<>nil) and (B^[p.x+1,p.y-1].rodzaj='krol') and (B^[p.x+1,p.y-1].kolor=MojKolor) then
+wynik:=True;
+if (B^[p.x+1,p.y+1]<>nil) and (B^[p.x+1,p.y+1].rodzaj='krol') and (B^[p.x+1,p.y+1].kolor=MojKolor) then
+wynik:=True;
+
+      Result:=wynik; //jezeli false to nie atakuje
+
+
+end;
+
+function TForm1.KtoAtakujePole(p:TPoint; szachownica:Pointer):TTablicaPunktow;
+var
+i,j:integer;
+wynik:array of TPoint;
+B:^TBoard;
+MojKolor:string;
+begin
+
+B:=szachownica;
+MojKolor:=B^[p.X,p.Y].kolor;
+
+//sprawdzamy na lewo od pola
+   for i:=1 to 8 do
+   begin
+      if p.Y-i<1 then Break;
+
+      if B^[p.X, p.Y-i]<> nil then
+      begin
+          if B^[p.X, p.Y-i].kolor = MojKolor then begin Break; end else
+          begin
+             if (B^[p.X, p.Y-i].rodzaj='wieza') or (B^[p.X, p.Y-i].rodzaj='hetman') then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x,p.y-i);
+		end;
+             Break;
+          end;
+      end;
+
+   end;
+
+   //sprawdzamy na prawo od pola
+      for i:=1 to 8 do
+      begin
+         if p.Y+i>8 then Break;
+
+         if B^[p.X, p.Y+i]<> nil then
+         begin
+             if B^[p.X, p.Y+i].kolor = MojKolor then begin Break; end else
+             begin
+                if (B^[p.X, p.Y+i].rodzaj='wieza') or (B^[p.X, p.Y+i].rodzaj='hetman') then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x,p.y+i);
+		end;
+                Break;
+             end;
+         end;
+
+      end;
+
+      //sprawdzamy w gore od pola
+         for i:=1 to 8 do
+         begin
+            if p.X-i<1 then Break;
+
+            if B^[p.X-i, p.Y]<> nil then
+            begin
+                if B^[p.X-i, p.Y].kolor = MojKolor then begin Break; end else
+                begin
+                   if (B^[p.X-i, p.Y].rodzaj='wieza') or (B^[p.X-i, p.Y].rodzaj='hetman') then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x-i,p.y);
+		end;
+                   Break;
+                end;
+            end;
+
+         end;
+
+         //sprawdzamy w dol od pola
+            for i:=1 to 8 do
+            begin
+               if p.X+i>8 then Break;
+
+               if B^[p.X+i, p.Y]<> nil then
+               begin
+                   if B^[p.X+i, p.Y].kolor = MojKolor then begin Break; end else
+                   begin
+                      if (B^[p.X+i, p.Y].rodzaj='wieza') or (B^[p.X+i, p.Y].rodzaj='hetman') then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x+i,p.y);
+		end;
+                      Break;
+                   end;
+               end;
+
+            end;
+
+         //sprawdzamy na lewo w gore od pola
+            for i:=1 to 8 do
+            begin
+               if (p.X-i<1) or (p.Y-i<1) then Break;
+
+               if B^[p.X-i, p.Y-i]<> nil then
+               begin
+                   if B^[p.X-i, p.Y-i].kolor = MojKolor then begin Break; end else
+                   begin
+                      if (B^[p.X-i, p.Y-i].rodzaj='goniec') or (B^[p.X-i, p.Y-i].rodzaj='hetman') then
+                      begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x-i,p.y-i);
+		end;
+                      Break;
+                   end;
+               end;
+
+            end;
+
+            //sprawdzamy na prawo w gore od pola
+               for i:=1 to 8 do
+               begin
+                  if (p.X-i<1) or (p.Y+i>8) then Break;
+
+                  if B^[p.X-i, p.Y+i]<> nil then
+                  begin
+                      if B^[p.X-i, p.Y+i].kolor = MojKolor then begin Break; end else
+                      begin
+                         if (B^[p.X-i, p.Y+i].rodzaj='goniec') or (B^[p.X-i, p.Y+i].rodzaj='hetman') then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x-i,p.y+i);
+		end;
+                         Break;
+                      end;
+                  end;
+
+               end;
+
+               //sprawdzamy na prawo w dol od pola
+                  for i:=1 to 8 do
+                  begin
+                     if (p.X+i>8) or (p.Y+i>8) then Break;
+
+                     if B^[p.X+i, p.Y+i]<> nil then
+                     begin
+                         if B^[p.X+i, p.Y+i].kolor = MojKolor then begin Break; end else
+                         begin
+                            if (B^[p.X+i, p.Y+i].rodzaj='goniec') or (B^[p.X+i, p.Y+i].rodzaj='hetman') then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x+i,p.y+i);
+		end;
+                            Break;
+                         end;
+                     end;
+
+                  end;
+
+                  //sprawdzamy na lewo w dol od pola
+
+                  for i:=1 to 8 do
+                  begin
+                     if (p.X+i>8) or (p.Y-i<1) then Break;
+
+                     if B^[p.X+i, p.Y-i]<> nil then
+                     begin
+                         if B^[p.X+i, p.Y-i].kolor = MojKolor then begin Break; end else
+                         begin
+                            if (B^[p.X+i, p.Y-i].rodzaj='goniec') or (B^[p.X+i, p.Y-i].rodzaj='hetman') then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x+i,p.y-i);
+		end;
+                            Break;
+                         end;
+                     end;
+
+                  end;
+
+//sprawdzamy piony
+if (p.X-1>=1) and (p.y-1>=1) then begin
+    if B^[p.X-1,p.Y-1]<>nil then
+    begin
+        if (B^[p.X-1,p.Y-1].rodzaj='pion') and (B^[p.X-1,p.Y-1].kolor<>MojKolor) then
+        begin
+	SetLength(wynik, Length(wynik)+1);
+	wynik[High(wynik)]:=Point(p.x-1,p.y-1);
+        end;
+    end;
+end;
+
+if (p.X-1>=1) and (p.y+1<=8) then begin
+    if B^[p.X-1,p.Y+1]<>nil then
+    begin
+        if (B^[p.X-1,p.Y+1].rodzaj='pion') and (B^[p.X-1,p.Y+1].kolor<>MojKolor) then
+        begin
+	SetLength(wynik, Length(wynik)+1);
+	wynik[High(wynik)]:=Point(p.x-1,p.y+1);
+        end;
+    end;
+end;
+
+
+
+//sprawdzamy konie
+
+   if (p.X-2>=1) and (p.Y+1<=8) then begin
+if B^[p.X-2,p.Y+1]<>nil then
+begin
+    if B^[p.X-2,p.Y+1].kolor<>MojKolor then
+    begin
+       if B^[p.X-2,p.Y+1].rodzaj='skoczek' then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x-2,p.y+1);
+		end;
+    end;
+end;  end;
+
+    if (p.X-1>=1) and (p.Y+2<=8) then begin
+ if B^[p.X-1,p.Y+2]<>nil then
+ begin
+     if B^[p.X-1,p.Y+2].kolor<>MojKolor then
+     begin
+        if B^[p.X-1,p.Y+2].rodzaj='skoczek' then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x-1,p.y+2);
+		end;
+     end;
+ end; end;
+
+    if (p.X+1<=8) and (p.Y+2<=8) then begin
+ if B^[p.X+1,p.Y+2]<>nil then
+ begin
+     if B^[p.X+1,p.Y+2].kolor<>MojKolor then
+     begin
+        if B^[p.X+1,p.Y+2].rodzaj='skoczek' then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x+1,p.y+2);
+		end;
+     end;
+ end; end;
+
+    if (p.X+2<=8) and (p.Y+1<=8) then begin
+ if B^[p.X+2,p.Y+1]<>nil then
+ begin
+     if B^[p.X+2,p.Y+1].kolor<>MojKolor then
+     begin
+        if B^[p.X+2,p.Y+1].rodzaj='skoczek' then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x+2,p.y+1);
+		end;
+     end;
+ end; end;
+
+    if (p.X+2<=8) and (p.Y-1>=1) then begin
+ if B^[p.X+2,p.Y-1]<>nil then
+ begin
+     if B^[p.X+2,p.Y-1].kolor<>MojKolor then
+     begin
+        if B^[p.X+2,p.Y-1].rodzaj='skoczek' then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x+2,p.y-1);
+		end;
+     end;
+ end; end;
+
+    if (p.X+1<=8) and (p.Y-2>=1) then begin
+ if B^[p.X+1,p.Y-2]<>nil then
+ begin
+     if B^[p.X+1,p.Y-2].kolor<>MojKolor then
+     begin
+        if B^[p.X+1,p.Y-2].rodzaj='skoczek' then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x+1,p.y-2);
+		end;
+     end;
+ end; end;
+
+    if (p.X-1>=1) and (p.Y-2>=1) then begin
+ if B^[p.X-1,p.Y-2]<>nil then
+ begin
+     if B^[p.X-1,p.Y-2].kolor<>MojKolor then
+     begin
+        if B^[p.X-1,p.Y-2].rodzaj='skoczek' then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x-1,p.y-2);
+		end;
+     end;
+ end; end;
+
+    if (p.X-2>=1) and (p.Y-1>=1) then begin
+ if B^[p.X-2,p.Y-1]<>nil then
+ begin
+     if B^[p.X-2,p.Y-1].kolor<>MojKolor then
+     begin
+        if B^[p.X-2,p.Y-1].rodzaj='skoczek' then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x-2,p.y-1);
+		end;
+     end;
+ end; end;
+
+
+    //sprawdzamy czy broni atakuje
+
+    if (B^[p.x-1,p.y]<>nil) and (B^[p.x-1,p.y].rodzaj='krol') and (B^[p.x-1,p.y].kolor=MojKolor) then
+begin
+    		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x-1,p.y);
+end;
+    if (B^[p.x+1,p.y]<>nil) and (B^[p.x+1,p.y].rodzaj='krol') and (B^[p.x+1,p.y].kolor=MojKolor) then
+    begin
+        		SetLength(wynik, Length(wynik)+1);
+    		wynik[High(wynik)]:=Point(p.x+1,p.y);
+    end;
+    if (B^[p.x,p.y-1]<>nil) and (B^[p.x,p.y-1].rodzaj='krol') and (B^[p.x,p.y-1].kolor=MojKolor) then
+    begin
+        		SetLength(wynik, Length(wynik)+1);
+    		wynik[High(wynik)]:=Point(p.x,p.y-1);
+    end;
+    if (B^[p.x,p.y+1]<>nil) and (B^[p.x,p.y+1].rodzaj='krol') and (B^[p.x,p.y+1].kolor=MojKolor) then
+    begin
+        		SetLength(wynik, Length(wynik)+1);
+    		wynik[High(wynik)]:=Point(p.x,p.y+1);
+    end;
+    if (B^[p.x-1,p.y-1]<>nil) and (B^[p.x-1,p.y-1].rodzaj='krol') and (B^[p.x-1,p.y-1].kolor=MojKolor) then
+    begin
+        		SetLength(wynik, Length(wynik)+1);
+    		wynik[High(wynik)]:=Point(p.x-1,p.y-1);
+    end;
+    if (B^[p.x-1,p.y+1]<>nil) and (B^[p.x-1,p.y+1].rodzaj='krol') and (B^[p.x-1,p.y+1].kolor=MojKolor) then
+    begin
+        		SetLength(wynik, Length(wynik)+1);
+    		wynik[High(wynik)]:=Point(p.x-1,p.y+1);
+    end;
+    if (B^[p.x+1,p.y-1]<>nil) and (B^[p.x+1,p.y-1].rodzaj='krol') and (B^[p.x+1,p.y-1].kolor=MojKolor) then
+    begin
+        		SetLength(wynik, Length(wynik)+1);
+    		wynik[High(wynik)]:=Point(p.x+1,p.y-1);
+    end;
+    if (B^[p.x+1,p.y+1]<>nil) and (B^[p.x+1,p.y+1].rodzaj='krol') and (B^[p.x+1,p.y+1].kolor=MojKolor) then
+    begin
+        		SetLength(wynik, Length(wynik)+1);
+    		wynik[High(wynik)]:=Point(p.x+1,p.y+1);
+    end;
+
+
+      Result:=wynik;
+
+
+end;
+
+function TForm1.CzySieRuszal(polozenie:TPoint):boolean;
+var
+RuszalSie:boolean;
+rodzaj,kolor:string;
+i:integer;
+begin
+rodzaj:=Board[polozenie.X,polozenie.Y].rodzaj;
+kolor:=Board[polozenie.X,polozenie.Y].kolor;
+
+RuszalSie:=false;
+for i:=0 to Length(PrzebiegPartii)-1 do
+begin
+   if (PrzebiegPartii[i].figura=rodzaj) and (PrzebiegPartii[i].kolor=kolor) then begin RuszalSie:=true; Break; end;
+end;
+
+Result:=RuszalSie;  //jak false to sie nie ruszal
+
+end;
+
+function TForm1.SprawdzKrola(pole:TPoint; na:string):boolean; //true - nie atakowany, false - atakowany
 var
 tmpBoard : array[1..8,1..8] of TBierka;
 tmp:TBierka;
@@ -1537,7 +3099,6 @@ WszystkoOK:boolean;
 figura:string;
 begin
 tmpBoard:=Board;
-WszystkoOK:=true;
 
 tmp:=tmpBoard[pole.X,pole.Y];
 tmpBoard[pole.X,pole.Y]:=nil;
@@ -1546,433 +3107,876 @@ tmpBoard[punkt.X,punkt.Y]:=tmp;
 
 for i:=1 to 8 do
 for j:=1 to 8 do
-  if TmpBoard[i,j]<>nil then begin if (tmpBoard[i,j].rodzaj='krol') and (tmpBoard[i,j].kolor='biale') then PozycjaKrola:=Point(i,j); end;
+  if TmpBoard[i,j]<>nil then begin if (tmpBoard[i,j].rodzaj='krol') and (tmpBoard[i,j].kolor=GramKolorem) then PozycjaKrola:=Point(i,j); end;
 
+WszystkoOK:=CzyCosAtakujePole(DaneBoard[PozycjaKrola.X, PozycjaKrola.Y].pole, 'ruch', GramKolorem, @tmpBoard);
 
-for i:=1 to 8 do
+if WszystkoOK=false then
+begin Result:=true end else
 begin
-   if PozycjaKrola.X+i>8 then Break;
-
-   if Board[PozycjaKrola.X+i, PozycjaKrola.Y]<>nil then
-   begin
-       if Board[PozycjaKrola.X+i, PozycjaKrola.Y].kolor='czarne' then
-       begin
-       figura:=Board[PozycjaKrola.X+i, PozycjaKrola.Y].rodzaj;
-
-           if (figura='krol') or (figura='hetman') or (figura='wieza') then
-           begin
-             wszystkoOK:=false;
-           end
-           else
-           begin
-             Break;
-           end;
-       end
-       else
-       begin
-           Break;
-       end;
-   end;
-
-end;
-
-for i:=1 to 8 do
-begin
-   if PozycjaKrola.X-i<1 then Break;
-
-   if Board[PozycjaKrola.X-i, PozycjaKrola.Y]<>nil then
-   begin
-       if Board[PozycjaKrola.X-i, PozycjaKrola.Y].kolor='czarne' then
-       begin
-       figura:=Board[PozycjaKrola.X-i, PozycjaKrola.Y].rodzaj;
-
-           if (figura='krol') or (figura='hetman') or (figura='wieza') then
-           begin
-             wszystkoOK:=false;
-           end
-           else
-           begin
-             Break;
-           end;
-       end
-       else
-       begin
-           Break;
-       end;
-   end;
-
-end;
-
-for i:=1 to 8 do
-begin
-   if PozycjaKrola.Y-i<1 then Break;
-
-   if Board[PozycjaKrola.X, PozycjaKrola.Y-i]<>nil then
-   begin
-       if Board[PozycjaKrola.X, PozycjaKrola.Y-i].kolor='czarne' then
-       begin
-       figura:=Board[PozycjaKrola.X, PozycjaKrola.Y-i].rodzaj;
-
-           if (figura='krol') or (figura='hetman') or (figura='wieza') then
-           begin
-             wszystkoOK:=false;
-           end
-           else
-           begin
-             Break;
-           end;
-       end
-       else
-       begin
-           Break;
-       end;
-   end;
-
-end;
-
-for i:=1 to 8 do
-begin
-   if PozycjaKrola.Y+i>8 then Break;
-
-   if Board[PozycjaKrola.X, PozycjaKrola.Y+i]<>nil then
-   begin
-       if Board[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='czarne' then
-       begin
-       figura:=Board[PozycjaKrola.X, PozycjaKrola.Y+i].rodzaj;
-
-           if (figura='krol') or (figura='hetman') or (figura='wieza') then
-           begin
-             wszystkoOK:=false;
-           end
-           else
-           begin
-             Break;
-           end;
-       end
-       else
-       begin
-           Break;
-       end;
-   end;
-
+Result:=false;
 end;
 
 
-
-{--jak goniec--}
-
-
-
-for i:=1 to 8 do    {w lewy gorny rog}
-   begin
-      if ((PozycjaKrola.X-i)<1) or ((PozycjaKrola.Y-i)<1) then Break;
-
-      if Board[PozycjaKrola.X-i, PozycjaKrola.Y-i]<>nil then
-      begin
-           if Board[PozycjaKrola.X-i, PozycjaKrola.Y-i].kolor='czarne' then
-           begin
-              figura:=Board[PozycjaKrola.X-i, PozycjaKrola.Y-i].rodzaj;
-
-                if (figura='hetman') or (figura='goniec') or (figura='krol') then
-                begin
-                wszystkoOK:=false;
-                end
-                else
-                begin
-                  Break;
-                end;
-
-           end
-           else
-           begin
-               Break;
-           end;
-      end;
-
-   end;
-
-   for i:=1 to 8 do    {w prawy gorny rog}
-   begin
-      if ((PozycjaKrola.X-i)<1) or ((PozycjaKrola.Y+i)>8) then Break;
-
-      if Board[PozycjaKrola.X-i, PozycjaKrola.Y+i]<>nil then
-      begin
-           if Board[PozycjaKrola.X-i, PozycjaKrola.Y+i].kolor='czarne' then
-           begin
-              figura:=Board[PozycjaKrola.X-i, PozycjaKrola.Y+i].rodzaj;
-
-                if (figura='hetman') or (figura='goniec') or (figura='krol') then
-                begin
-                wszystkoOK:=false;
-                end
-                else
-                begin
-                  Break;
-                end;
-
-           end
-           else
-           begin
-               Break;
-           end;
-      end;
-
-   end;
-
-
-   for i:=1 to 8 do    {w lewy dolny rog}
-   begin
-      if ((PozycjaKrola.X+i)>8) or ((PozycjaKrola.Y-i)<1) then Break;
-
-      if Board[PozycjaKrola.X+i, PozycjaKrola.Y-i]<>nil then
-      begin
-           if Board[PozycjaKrola.X+i, PozycjaKrola.Y-i].kolor='czarne' then
-           begin
-              figura:=Board[PozycjaKrola.X+i, PozycjaKrola.Y-i].rodzaj;
-
-                if (figura='hetman') or (figura='goniec') or (figura='krol') then
-                begin
-                wszystkoOK:=false;
-                end
-                else
-                begin
-                  Break;
-                end;
-
-           end
-           else
-           begin
-               Break;
-           end;
-
-      end;
-
-   end;
-
-
-   for i:=1 to 8 do    {w prawy dolny rog}
-   begin
-      if ((PozycjaKrola.X+i)>8) or ((PozycjaKrola.Y+i)>8) then Break;
-
-      if Board[PozycjaKrola.X+i, PozycjaKrola.Y+i]<>nil then
-      begin
-           if Board[PozycjaKrola.X+i, PozycjaKrola.Y+i].kolor='czarne' then
-           begin
-              figura:=Board[PozycjaKrola.X+i, PozycjaKrola.Y+i].rodzaj;
-
-                if (figura='hetman') or (figura='goniec') or (figura='krol') then
-                begin
-                wszystkoOK:=false;
-                end
-                else
-                begin
-                  Break;
-                end;
-
-            end
-           else
-           begin
-               Break;
-           end;
-
-      end;
-
-   end;
-
-   {--sprawdzamy pionki--}
-
-if ((PozycjaKrola.X-1)>=1) or ((PozycjaKrola.Y+1)<=8) then
-begin
-
-if Board[PozycjaKrola.X-1, PozycjaKrola.Y+1]<>nil then
-begin
-   if (Board[PozycjaKrola.X-1, PozycjaKrola.Y+1].rodzaj='pion') and (Board[PozycjaKrola.X-1, PozycjaKrola.Y+1].kolor='czarne') then wszystkoOK:=false;
 end;
 
-end;
-
-if ((PozycjaKrola.X-1)>=1) or ((PozycjaKrola.Y-1)>=1) then
-begin
-
-if Board[PozycjaKrola.X-1, PozycjaKrola.Y-1]<>nil then
-begin
-   if (Board[PozycjaKrola.X-1, PozycjaKrola.Y-1].rodzaj='pion') and (Board[PozycjaKrola.X-1, PozycjaKrola.Y-1].kolor='czarne') then wszystkoOK:=false;
-end;
-
-end;
-
-Result:=WszystkoOK;
-
-end;
-
-
-
-   function TForm1.SprawdzKrolaCzarnego(pole:TPoint; na:string):boolean;
+function TForm1.CzyKrolMaGdzieUciec(K:TPoint):boolean;
 var
-tmpBoard : array[1..8,1..8] of TBierka;
-tmp:TBierka;
-punkt:TPoint;
+ma:boolean;
+MojKolor,KolorPrzeciwnika:string;
+begin
+ma:=false;
+
+MojKolor:=Board[K.X,K.Y].kolor;
+
+if MojKolor='biale' then begin KolorPrzeciwnika:='czarne'; end else begin KolorPrzeciwnika:='biale'; end;
+
+if K.x-1>=1 then begin  //do gory
+   if Board[K.X-1, K.Y]=nil then
+   begin
+      if CzyCosAtakujePole(DaneBoard[K.X-1,K.Y].pole, 'ruch', MojKolor, @Board)=false then ma:=True;
+   end
+   else
+   begin
+      if (MojKolor<>Board[K.X-1,K.Y].kolor) then
+         begin
+             if CzyCosBroniPole(DaneBoard[K.X-1,K.Y].pole, 'ruch', KolorPrzeciwnika, @Board)=false then ma:=True;
+         end;
+   end;
+end;
+
+if (K.x-1>=1) and (K.y+1<=8) then begin  //do gory w prawo
+   if Board[K.X+1, K.Y+1]=nil then
+   begin
+      if CzyCosAtakujePole(DaneBoard[K.X-1,K.Y+1].pole, 'ruch',MojKolor, @Board)=false then ma:=True;
+   end
+      else
+   begin
+      if (MojKolor<>Board[K.X-1,K.Y+1].kolor) then
+         begin
+             if CzyCosBroniPole(DaneBoard[K.X-1,K.Y+1].pole, 'ruch', KolorPrzeciwnika, @Board)=false then ma:=True;
+         end;
+   end;
+end;
+
+if (K.x-1>=1) and (K.y-1>=1) then begin  //do gory w lewo
+   if Board[K.X+1, K.Y-1]=nil then
+   begin
+      if CzyCosAtakujePole(DaneBoard[K.X-1,K.Y-1].pole, 'ruch', MojKolor, @Board)=false then ma:=True;
+   end
+      else
+   begin
+      if (MojKolor<>Board[K.X-1,K.Y-1].kolor) then
+         begin
+             if CzyCosBroniPole(DaneBoard[K.X-1,K.Y-1].pole, 'ruch', KolorPrzeciwnika, @Board)=false then ma:=True;
+         end;
+   end;
+end;
+
+if K.y-1>=1 then begin  //w lewo
+   if Board[K.X, K.Y-1]=nil then
+   begin
+      if CzyCosAtakujePole(DaneBoard[K.X,K.Y-1].pole, 'ruch', MojKolor, @Board)=false then ma:=True;
+   end
+      else
+   begin
+      if (MojKolor<>Board[K.X,K.Y-1].kolor) then
+         begin
+             if CzyCosBroniPole(DaneBoard[K.X,K.Y-1].pole, 'ruch', KolorPrzeciwnika, @Board)=false then ma:=True;
+         end;
+   end;
+end;
+
+if (K.x+1<=8) and (K.y-1>=1) then begin  //w lewo w dol
+   if Board[K.X+1, K.Y-1]=nil then
+   begin
+      if CzyCosAtakujePole(DaneBoard[K.X+1,K.Y-1].pole, 'ruch', MojKolor, @Board)=false then ma:=True;
+   end
+      else
+   begin
+      if (MojKolor<>Board[K.X+1,K.Y-1].kolor) then
+         begin
+             if CzyCosBroniPole(DaneBoard[K.X+1,K.Y-1].pole, 'ruch', KolorPrzeciwnika, @Board)=false then ma:=True;
+         end;
+   end;
+end;
+
+if K.x+1<=8 then begin  //w dol
+   if Board[K.X+1, K.Y]=nil then
+   begin
+      if CzyCosAtakujePole(DaneBoard[K.X+1,K.Y].pole, 'ruch', MojKolor, @Board)=false then ma:=True;
+   end
+      else
+   begin
+      if (MojKolor<>Board[K.X+1,K.Y].kolor) then
+         begin
+             if CzyCosBroniPole(DaneBoard[K.X+1,K.Y].pole, 'ruch', KolorPrzeciwnika, @Board)=false then ma:=True;
+         end;
+   end;
+end;
+
+if K.y+1<=8 then begin  //w prawo
+   if Board[K.X, K.Y+1]=nil then
+   begin
+      if CzyCosAtakujePole(DaneBoard[K.X,K.Y+1].pole, 'ruch', MojKolor, @Board)=false then ma:=True;
+   end
+      else
+   begin
+      if (MojKolor<>Board[K.X,K.Y+1].kolor) then
+         begin
+             if CzyCosBroniPole(DaneBoard[K.X,K.Y+1].pole, 'ruch', KolorPrzeciwnika, @Board)=false then ma:=True;
+         end;
+   end;
+end;
+
+if (K.x+1<=8) and (K.y+1<=8) then begin  //w prawo w dol
+   if Board[K.X+1, K.Y+1]=nil then
+   begin
+      if CzyCosAtakujePole(DaneBoard[K.X+1,K.Y+1].pole, 'ruch', MojKolor, @Board)=false then
+      ma:=True;
+   end
+      else
+   begin
+      if (MojKolor<>Board[K.X+1,K.Y+1].kolor) then
+         begin
+             if CzyCosBroniPole(DaneBoard[K.X+1,K.Y+1].pole, 'ruch', KolorPrzeciwnika, @Board)=false then
+             ma:=True;
+         end;
+   end;
+end;
+
+Result:=ma;
+
+end;
+
+
+function TForm1.CzyCosStanieNaPolu(pozycja,MojKolor:string;szachownica:Pointer):boolean;   //podrzedne
+var
+p,PozycjaKrola:TPoint;
+i,j:integer;
+wynik:boolean;
+B:^TBoard;
+tmpBoard:TBoard;
+tmpBierka:TBierka;
+begin
+wynik:=false;
+p:=ZnajdzIJbyPole(pozycja);
+
+B:=szachownica;
+
+//szukamy pozycji krola na szachownicy
+for i:=1 to 8 do
+for j:=1 to 8 do
+  if B^[i,j]<>nil then begin if (B^[i,j].rodzaj='krol') and (B^[i,j].kolor=MojKolor) then PozycjaKrola:=Point(i,j); end;
+
+//sprawdzamy na lewo od pola
+   for i:=1 to 8 do
+   begin
+      if p.Y-i<1 then Break;
+
+      if B^[p.X, p.Y-i]<> nil then
+      begin
+          if B^[p.X, p.Y-i].kolor = MojKolor then begin
+             if (B^[p.X, p.Y-i].rodzaj='wieza') or (B^[p.X, p.Y-i].rodzaj='hetman') then
+             begin
+                  tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X, p.Y-i];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X, p.Y-i]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+             end;
+             Break;
+      end;
+     end;
+   end;
+
+   //sprawdzamy na prawo od pola
+      for i:=1 to 8 do
+      begin
+         if p.Y+i>8 then Break;
+
+         if B^[p.X, p.Y+i]<> nil then
+         begin
+             if B^[p.X, p.Y+i].kolor = MojKolor then begin
+                if (B^[p.X, p.Y+i].rodzaj='wieza') or (B^[p.X, p.Y+i].rodzaj='hetman') then
+                             begin
+                  tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X, p.Y+i];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X, p.Y+i]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+             end;
+                Break;
+         end;
+       end;
+      end;
+
+      //sprawdzamy w gore od pola
+         for i:=1 to 8 do
+         begin
+            if p.X-i<1 then Break;
+
+            if B^[p.X-i, p.Y]<> nil then
+            begin
+                if B^[p.X-i, p.Y].kolor = MojKolor then begin
+                   if (B^[p.X-i, p.Y].rodzaj='wieza') or (B^[p.X-i, p.Y].rodzaj='hetman') then
+                                begin
+                  tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X-i, p.Y];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X-i, p.Y]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+             end;
+                   Break;
+            end;
+           end;
+         end;
+
+         //sprawdzamy w dol od pola
+            for i:=1 to 8 do
+            begin
+               if p.X+i>8 then Break;
+
+               if B^[p.X+i, p.Y]<> nil then
+               begin
+                   if B^[p.X+i, p.Y].kolor = MojKolor then begin
+                      if (B^[p.X+i, p.Y].rodzaj='wieza') or (B^[p.X+i, p.Y].rodzaj='hetman') then
+                                   begin
+                  tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X+i, p.Y];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X+i, p.Y]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+             end;
+                      Break;
+               end;
+            end;
+            end;
+
+         //sprawdzamy na lewo w gore od pola
+            for i:=1 to 8 do
+            begin
+               if (p.X-i<1) or (p.Y-i<1) then Break;
+
+               if B^[p.X-i, p.Y-i]<> nil then
+               begin
+                   if B^[p.X-i, p.Y-i].kolor = MojKolor then begin
+                      if (B^[p.X-i, p.Y-i].rodzaj='goniec') or (B^[p.X-i, p.Y-i].rodzaj='hetman') then
+                      begin
+                                        tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X-i, p.Y-i];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X-i, p.Y-i]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+                      end;
+                      Break;
+               end;
+               end;
+            end;
+
+            //sprawdzamy na prawo w gore od pola
+               for i:=1 to 8 do
+               begin
+                  if (p.X-i<1) or (p.Y+i>8) then Break;
+
+                  if B^[p.X-i, p.Y+i]<> nil then
+                  begin
+                      if B^[p.X-i, p.Y+i].kolor = MojKolor then begin
+                         if (B^[p.X-i, p.Y+i].rodzaj='goniec') or (B^[p.X-i, p.Y+i].rodzaj='hetman') then
+                         begin
+                                           tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X-i, p.Y+i];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X-i, p.Y+i]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+                         end;
+                         Break;
+                  end;
+                  end;
+               end;
+
+               //sprawdzamy na prawo w dol od pola
+                  for i:=1 to 8 do
+                  begin
+                     if (p.X+i>8) or (p.Y+i>8) then Break;
+
+                     if B^[p.X+i, p.Y+i]<> nil then
+                     begin
+                         if B^[p.X+i, p.Y+i].kolor = MojKolor then begin
+                            if (B^[p.X+i, p.Y+i].rodzaj='goniec') or (B^[p.X+i, p.Y+i].rodzaj='hetman') then
+                            begin
+                                              tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X+i, p.Y+i];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X+i, p.Y+i]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+                            end;
+                            Break;
+                     end;
+                    end;
+                  end;
+
+                  //sprawdzamy na lewo w dol od pola
+
+                  for i:=1 to 8 do
+                  begin
+                     if (p.X+i>8) or (p.Y-i<1) then Break;
+
+                     if B^[p.X+i, p.Y-i]<> nil then
+                     begin
+                         if B^[p.X+i, p.Y-i].kolor = MojKolor then begin
+                            if (B^[p.X+i, p.Y-i].rodzaj='goniec') or (B^[p.X+i, p.Y-i].rodzaj='hetman') then
+                            begin
+                                              tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X+i, p.Y-i];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X+i, p.Y-i]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+                            end;
+                            Break;
+                         end;
+                  end;
+                      end;
+
+//sprawdzamy ataki pionow
+
+
+if (p.X+1<=8) then
+begin
+   if B^[p.X-1, p.Y]<>nil then begin
+     if B^[p.X-1, p.Y].kolor=MojKolor then
+     begin
+        if B^[p.x-1, p.Y].rodzaj='pion' then begin
+                          tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X-1, p.Y];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X-1, p.Y]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+        end;
+     end;
+   end;
+end;
+
+
+//sprawdzamy konie
+
+   if (p.X-2>=1) and (p.Y+1<=8) then begin
+if B^[p.X-2,p.Y+1]<>nil then
+begin
+    if B^[p.X-2,p.Y+1].kolor=MojKolor then
+    begin
+       if B^[p.X-2,p.Y+1].rodzaj='skoczek' then begin
+                         tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X-2, p.Y+1];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X-2, p.Y+1]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+       end;
+    end;
+end;  end;
+
+    if (p.X-1>=1) and (p.Y+2<=8) then begin
+ if B^[p.X-1,p.Y+2]<>nil then
+ begin
+     if B^[p.X-1,p.Y+2].kolor=MojKolor then
+     begin
+        if B^[p.X-1,p.Y+2].rodzaj='skoczek' then begin
+                          tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X-1, p.Y+2];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X-1, p.Y+2]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+        end;
+     end;
+ end; end;
+
+    if (p.X+1<=8) and (p.Y+2<=8) then begin
+ if B^[p.X+1,p.Y+2]<>nil then
+ begin
+     if B^[p.X+1,p.Y+2].kolor=MojKolor then
+     begin
+        if B^[p.X+1,p.Y+2].rodzaj='skoczek' then begin
+                          tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X+1, p.Y+2];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X+1, p.Y+2]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+        end;
+     end;
+ end; end;
+
+    if (p.X+2<=8) and (p.Y+1<=8) then begin
+ if B^[p.X+2,p.Y+1]<>nil then
+ begin
+     if B^[p.X+2,p.Y+1].kolor=MojKolor then
+     begin
+        if B^[p.X+2,p.Y+1].rodzaj='skoczek' then begin
+                          tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X+2, p.Y+1];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X+2, p.Y+1]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+        end;
+     end;
+ end; end;
+
+    if (p.X+2<=8) and (p.Y-1>=1) then begin
+ if B^[p.X+2,p.Y-1]<>nil then
+ begin
+     if B^[p.X+2,p.Y-1].kolor=MojKolor then
+     begin
+        if B^[p.X+2,p.Y-1].rodzaj='skoczek' then begin
+                          tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X+2, p.Y-1];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X+2, p.Y-1]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+        end;
+     end;
+ end; end;
+
+    if (p.X+1<=8) and (p.Y-2>=1) then begin
+ if B^[p.X+1,p.Y-2]<>nil then
+ begin
+     if B^[p.X+1,p.Y-2].kolor=MojKolor then
+     begin
+        if B^[p.X+1,p.Y-2].rodzaj='skoczek' then begin
+                          tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X+1, p.Y-2];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X+1, p.Y-2]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+        end;
+     end;
+ end; end;
+
+    if (p.X-1>=1) and (p.Y-2>=1) then begin
+ if B^[p.X-1,p.Y-2]<>nil then
+ begin
+     if B^[p.X-1,p.Y-2].kolor=MojKolor then
+     begin
+        if B^[p.X-1,p.Y-2].rodzaj='skoczek' then begin
+                          tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X-1, p.Y-2];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X-1, p.Y-2]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+        end;
+     end;
+ end; end;
+
+    if (p.X-2>=1) and (p.Y-1>=1) then begin
+ if B^[p.X-2,p.Y-1]<>nil then
+ begin
+     if B^[p.X-2,p.Y-1].kolor=MojKolor then
+     begin
+        if B^[p.X-2,p.Y-1].rodzaj='skoczek' then begin
+                          tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X-2, p.Y-1];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X-2, p.Y-1]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+        end;
+     end;
+ end; end;
+
+
+
+      Result:=wynik; //jezeli false to nie stanie nic
+
+end;
+
+function TForm1.CzyMoznaZaslonic(atakowany,atakujacy:TPoint):boolean;  //nadrzedne
+var
+i,j:integer;
+CzyMozna,tmp:boolean;
+a,b:TPoint;
+begin
+CzyMozna:=false;
+
+if (atakowany.X-atakujacy.X<0) and (atakowany.Y-atakujacy.Y<0) then //atak po skosie z dolu z prawej
+begin
+  //  tmp:=false;
+    for i:=1 to atakujacy.X-atakowany.X do
+    begin
+         if (atakowany.X+i=atakujacy.X) then Break;
+         if (CzyCosStanieNaPolu(DaneBoard[atakowany.X+i,atakowany.Y+i].pole, Board[atakowany.X,atakowany.Y].kolor,@Board)=true) then
+         Exit (true);
+    end;
+ //   if tmp=false then Exit (false);
+end;
+
+if (atakowany.X-atakujacy.X<0) and (atakowany.Y-atakujacy.Y>0) then //atak po skosie z dolu z lewej
+begin
+  //  tmp:=false;
+    for i:=1 to atakujacy.X-atakowany.X do
+    begin
+         if (atakowany.X+i=atakujacy.X) then Break;
+         if (CzyCosStanieNaPolu(DaneBoard[atakowany.X+i,atakowany.Y-i].pole, Board[atakowany.X,atakowany.Y].kolor,@Board)=true) then
+         Exit (true);
+    end;
+ //   if tmp=false then Exit (false);
+end;
+
+if (atakowany.X-atakujacy.X>0) and (atakowany.Y-atakujacy.Y>0) then //atak po skosie z gory z lewej
+begin
+ //   tmp:=false;
+    for i:=1 to atakowany.X-atakujacy.X do
+    begin
+         if (atakujacy.X+i=atakowany.X) then Break;
+         if (CzyCosStanieNaPolu(DaneBoard[atakowany.X-i,atakowany.Y-i].pole, Board[atakowany.X,atakowany.Y].kolor,@Board)=true) then
+         Exit (true);
+    end;
+ //   if tmp=false then Exit (false);
+end;
+
+if (atakowany.X-atakujacy.X>0) and (atakowany.Y-atakujacy.Y<0) then //atak po skosie z gory z prawej
+begin
+ //   tmp:=false;
+    for i:=1 to atakowany.X-atakujacy.X do
+    begin
+         if (atakujacy.X+i=atakowany.X) then Break;
+         if (CzyCosStanieNaPolu(DaneBoard[atakowany.X-i,atakowany.Y+i].pole, Board[atakowany.X,atakowany.Y].kolor,@Board)=true) then
+         Exit (true);
+    end;
+ //   if tmp=false then Exit (false);
+end;
+
+if (atakowany.X-atakujacy.X>0) and (atakowany.Y-atakujacy.Y=0) then //atak z gory
+begin
+ //   tmp:=false;
+    for i:=1 to atakowany.X-atakujacy.X do
+    begin
+         if (atakujacy.X+i=atakowany.X) then Break;
+         if (CzyCosStanieNaPolu(DaneBoard[atakowany.X-i,atakowany.Y].pole, Board[atakowany.X,atakowany.Y].kolor,@Board)=true) then
+         Exit (true);
+    end;
+ //   if tmp=false then Exit (false);
+end;
+
+if (atakowany.X-atakujacy.X<0) and (atakowany.Y-atakujacy.Y=0) then //atak z dolu
+begin
+ //   tmp:=false;
+    for i:=1 to atakujacy.X-atakowany.X do
+    begin
+         if (atakowany.X+i=atakujacy.X) then Break;
+         if (CzyCosStanieNaPolu(DaneBoard[atakowany.X+i,atakowany.Y].pole, Board[atakowany.X,atakowany.Y].kolor,@Board)=true) then
+         Exit (true);
+    end;
+ //   if tmp=false then Exit (false);
+end;
+
+if (atakowany.X-atakujacy.X=0) and (atakowany.Y-atakujacy.Y>0) then //atak z lewej
+begin
+  //  tmp:=false;
+   j:=atakowany.Y-atakujacy.Y;
+
+    for i:=1 to j do
+    begin
+         if (atakujacy.Y+i=atakowany.Y) then Break;
+         if (CzyCosStanieNaPolu(DaneBoard[atakowany.X,atakowany.Y-i].pole, Board[atakowany.X,atakowany.Y].kolor,@Board)=true) then
+         Exit (true);
+    end;
+ //   if tmp=false then Exit (false);
+end;
+
+if (atakowany.X-atakujacy.X=0) and (atakowany.Y-atakujacy.Y<0) then //atak z prawej
+begin
+ //   tmp:=false;
+    for i:=1 to atakujacy.Y-atakowany.Y do
+    begin
+         if (atakowany.Y+i=atakujacy.Y) then Break;
+         if (CzyCosStanieNaPolu(DaneBoard[atakowany.X,atakowany.Y+i].pole, Board[atakowany.X,atakowany.Y].kolor,@Board)=true) then
+         Exit (true);
+    end;
+ //   if tmp=false then Exit (false);
+end;
+
+
+
+    Result:=CzyMozna;
+end;
+
+function TForm1.CzyMat(kolor:string):boolean;
+var
+PozycjaKrola:TPoint;
+i,j:integer;
+atakujacy:TTablicaPunktow;
+KolorPrzeciwnika:string;
+nie:boolean;
+begin
+nie:=false;
+
+for i:=1 to 8 do
+for j:=1 to 8 do
+  if Board[i,j]<>nil then begin if (Board[i,j].rodzaj='krol') and (Board[i,j].kolor=kolor) then PozycjaKrola:=Point(i,j); end;
+
+if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch', kolor, @Board)=true then   //Po wykonanym ruchu sprawdzamy czy cos atakuje wskazanego krola
+begin
+
+   //sprawdzamy najpierw najblizsze pola krola czy moze uciec albo zabic
+        if CzyKrolMaGdzieUciec(PozycjaKrola)=true then
+        begin
+        Exit (False);
+        end
+        else
+        begin
+
+     //jezeli krol  moze uciec lub zabic z bliska sprawdzamy liste atakujacych
+            atakujacy:=KtoAtakujePole(PozycjaKrola, @Board);
+
+            if Length(atakujacy)=0 then Exit; //brak atakujacych przeciwnikow
+
+            for i:=0 to Length(atakujacy)-1 do
+            begin
+                 //najpierw sprawdzimy czy mozna zabic bierke
+
+                if kolor='biale' then begin KolorPrzeciwnika:='czarne'; end else begin KolorPrzeciwnika:='biale'; end;
+
+                if CzyCosAtakujePole(DaneBoard[atakujacy[i].x,atakujacy[i].y].pole, 'ruch', KolorPrzeciwnika, @Board) = true then //jezeli nie mozna zabic bierki sprawdzamy czy mozna zaslonic pola
+                begin
+                Exit (False);
+                end
+                else
+                begin
+
+
+                      if CzyMoznaZaslonic(PozycjaKrola, atakujacy[i])=true then
+                      begin
+                      Exit (False);
+                      end
+                      else
+                      begin
+                      Exit (True);
+                      end;
+                 end;
+            end;
+        end;
+        end;
+
+Result:=nie;
+end;
+
+function TForm1.CzyPat(ruch:string):boolean;
+var
 i,j:integer;
 PozycjaKrola:TPoint;
-WszystkoOK:boolean;
 begin
-tmpBoard:=Board;
-WszystkoOK:=true;
-
-tmp:=tmpBoard[pole.X,pole.Y];
-tmpBoard[pole.X,pole.Y]:=nil;
-punkt:=znajdzIJbyPole(na);
-tmpBoard[punkt.X,punkt.Y]:=tmp;
 
 for i:=1 to 8 do
 for j:=1 to 8 do
-  if TmpBoard[i,j]<>nil then begin if (tmpBoard[i,j].rodzaj='krol') and (tmpBoard[i,j].kolor='czarne') then PozycjaKrola:=Point(i,j); end;
-
-
- //Sprawdzamy w pionie w gore
-
-for i:=1 to 8 do
-  begin
-
-    if PozycjaKrola.X-i<1 then begin Break; end
-    else
+begin
+    if (Board[i,j]<>nil) then
     begin
-
-    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y]<>nil then begin  if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y].rodzaj='krol' then begin WszystkoOK:=false; Break; end; end; //sprawdzamy czy wchodzi pod krola
-    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y]<>nil then begin  if (tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y].rodzaj='wieza') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
-    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y]<>nil then begin  if (tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
+         if Board[i,j].kolor=ruch then
+         begin
+              if Length(MozliweRuchy(DaneBoard[i,j].pole))>0 then
+              Exit (False);
+         end;
     end;
-
-  end;
-
-   //Sprawdzamy w pionie w dol
-
-for i:=1 to 8 do
-  begin
-
-    if PozycjaKrola.X+i>8 then begin Break; end
-    else
-    begin
-
-    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y]<>nil then begin  if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y].rodzaj='krol' then begin WszystkoOK:=false; Break; end; end; //sprawdzamy czy wchodzi pod krola
-    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y]<>nil then begin  if (tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y].rodzaj='wieza') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
-    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y]<>nil then begin  if (tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
-    end;
-
-  end;
-
-
-//Sprawdzamy w Poziomie w Prawo
-
-for i:=1 to 8 do
-  begin
-
-    if PozycjaKrola.Y+i>8 then begin Break; end
-    else
-    begin
-
-    if tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i]<>nil then begin  if tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].rodzaj='krol' then begin WszystkoOK:=false; Break; end; end; //sprawdzamy czy wchodzi pod krola
-    if tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i]<>nil then begin  if (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].rodzaj='wieza') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
-    if tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i]<>nil then begin  if (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
-    end;
-
-  end;
-
-//Sprawdzamy w Poziomie w Lewo
-
-for i:=1 to 8 do
-  begin
-
-    if PozycjaKrola.Y-i<1 then begin Break; end
-    else
-    begin
-
-    if tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i]<>nil then begin  if tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i].rodzaj='krol' then begin WszystkoOK:=false; Break; end; end;//sprawdzamy czy wchodzi pod krola
-    if tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i]<>nil then begin  if (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i].rodzaj='wieza') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
-    if tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i]<>nil then begin  if (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y-i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
-    end;
-
-  end;
-
-  //Sprawdzamy po skosie w dol w prawo
-
-for i:=1 to 8 do
-  begin
-
-    if (PozycjaKrola.X+i>8) or (PozycjaKrola.Y+i>8) then begin Break; end
-    else
-    begin
-
-    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y+i]<>nil then begin  if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y+i].rodzaj='krol' then begin WszystkoOK:=false; Break; end; end;//sprawdzamy czy wchodzi pod krola
-    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y+i]<>nil then begin  if (tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y+i].rodzaj='goniec') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
-    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y+i]<>nil then begin if (tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y+i].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
-    end;
-
-  end;
-
-    //Sprawdzamy po skosie w gore w prawo
-
-for i:=1 to 8 do
-  begin
-
-    if (PozycjaKrola.X-i<1) or (PozycjaKrola.Y+i>8) then begin Break; end
-    else
-    begin
-
-    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y+i]<>nil then begin  if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y+i].rodzaj='krol' then begin WszystkoOK:=false; Break; end; end;//sprawdzamy czy wchodzi pod krola
-    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y+i]<>nil then begin  if (tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y+i].rodzaj='goniec') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
-    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y+i]<>nil then begin  if (tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y+i].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
-    end;
-
-  end;
-
-      //Sprawdzamy po skosie w dol w lewo
-
-for i:=1 to 8 do
-  begin
-
-    if (PozycjaKrola.X+i>8) or (PozycjaKrola.Y-i<1) then begin Break; end
-    else
-    begin
-
-    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y-i]<>nil then begin  if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y-i].rodzaj='krol' then begin WszystkoOK:=false; Break; end; end;//sprawdzamy czy wchodzi pod krola
-    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y-i]<>nil then begin  if (tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y-i].rodzaj='goniec') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
-    if tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y-i]<>nil then begin  if (tmpBoard[PozycjaKrola.X+i, PozycjaKrola.Y-i].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
-    end;
-
-  end;
-
-        //Sprawdzamy po skosie w gore w lewo
-
-for i:=1 to 8 do
-  begin
-
-    if (PozycjaKrola.X-i<1) or (PozycjaKrola.Y-i<1) then begin Break; end
-    else
-    begin
-
-    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y-i]<>nil then begin  if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y-i].rodzaj='krol' then begin WszystkoOK:=false; Break; end; end;//sprawdzamy czy wchodzi pod krola
-    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y-i]<>nil then begin  if (tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y-i].rodzaj='goniec') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
-    if tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y-i]<>nil then begin  if (tmpBoard[PozycjaKrola.X-i, PozycjaKrola.Y-i].rodzaj='hetman') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; Break; end; end;
-    end;
-
-  end;
-
-//sprawdzamy czy nie atakuje skoczek
-
-if (tmpBoard[PozycjaKrola.X+1, PozycjaKrola.Y+2]<>nil) then begin if (tmpBoard[PozycjaKrola.X+1, PozycjaKrola.Y+2].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; end; end;
-if (tmpBoard[PozycjaKrola.X-1, PozycjaKrola.Y-2]<>nil) then begin if (tmpBoard[PozycjaKrola.X-1, PozycjaKrola.Y+2].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; end; end;
-if (tmpBoard[PozycjaKrola.X+2, PozycjaKrola.Y+1]<>nil) then begin if (tmpBoard[PozycjaKrola.X+2, PozycjaKrola.Y+1].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; end; end;
-if (tmpBoard[PozycjaKrola.X-2, PozycjaKrola.Y+1]<>nil) then begin if (tmpBoard[PozycjaKrola.X-2, PozycjaKrola.Y+1].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; end; end;
-if (tmpBoard[PozycjaKrola.X+1, PozycjaKrola.Y-2]<>nil) then begin if (tmpBoard[PozycjaKrola.X+1, PozycjaKrola.Y-2].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; end; end;
-if (tmpBoard[PozycjaKrola.X-1, PozycjaKrola.Y-2]<>nil) then begin if (tmpBoard[PozycjaKrola.X-1, PozycjaKrola.Y-2].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; end; end;
-if (tmpBoard[PozycjaKrola.X+2, PozycjaKrola.Y-1]<>nil) then begin if (tmpBoard[PozycjaKrola.X+2, PozycjaKrola.Y-1].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; end; end;
-if (tmpBoard[PozycjaKrola.X-2, PozycjaKrola.Y-1]<>nil) then begin if (tmpBoard[PozycjaKrola.X-2, PozycjaKrola.Y-1].rodzaj='skoczek') and (tmpBoard[PozycjaKrola.X, PozycjaKrola.Y+i].kolor='biale') then begin WszystkoOK:=false; end; end;
-
-Result:=WszystkoOK;
-//stworzenie roboczej tabeli i sprawdzenie czy po nowym ruchu nie bedzie atakowany czarny krol po ruchu czarnych
 end;
 
+Result:=True;
+
+
+end;
+
+
+function TForm1.ZostalTylkoKrol(kolor:string):boolean;
+var
+i,j:integer;
+begin
+for i:=1 to 8 do
+for j:=1 to 8 do
+begin
+    if Board[i,j]<>nil then
+    begin
+         if Board[i,j].kolor=kolor then
+         begin
+              if (Board[i,j].rodzaj<> 'krol') then
+              begin
+                  Exit (False);
+              end;
+         end;
+    end;
+end;
+
+Result:=True;
+
+end;
+
+
+function TForm1.CzyRemis:boolean;
+var
+i,j:integer;
+JestGoniec,JestSkoczek:boolean;
+ruchy:TMapaRuchow;
+begin
+
+//najpierw sprawdzimy czy zostaly odpowiednie bierki
+
+//tylko krole
+
+if (ZostalTylkoKrol('biale') and ZostalTylkoKrol('czarne')) then
+Exit (True);
+
+
+//sprawdzamy biale
+for i:=1 to 8 do
+for j:=1 to 8 do
+begin
+if (Board[i,j]<>nil) and (Board[i,j].kolor='biale') and (Board[i,j].rodzaj<> 'krol') then
+begin
+    if (Board[i,j].rodzaj='pion') then //jezeli pion to czy moze sie ruszyc
+    begin
+        if Board[i-1,j]<>nil then
+        begin
+        if (Board[i-1,j].rodzaj='pion') and (Board[i-1,j].kolor<>'biale')
+        then Exit (False);
+        end;
+    end;
+
+    if (Board[i,j].rodzaj='wieza') or (Board[i,j].rodzaj='hetman') then
+    Exit (False);
+
+end;
+
+end;
+
+//sprawdzamy czy sa tylko dwa gonce
+
+JestGoniec:=false;
+
+for i:=1 to 8 do
+for j:=1 to 8 do
+begin
+if (Board[i,j]<>nil) and (Board[i,j].kolor='biale') and (Board[i,j].rodzaj<> 'krol') then
+begin
+    if Board[i,j].rodzaj='goniec' then
+    begin
+        if JestGoniec=true then
+        Exit (False);
+
+        JestGoniec:=true;
+    end;
+end;
+end;
+
+//sprawdzamy czy sa goniec i skoczek
+
+JestSkoczek:=false;
+JestGoniec:=false;
+
+for i:=1 to 8 do
+for j:=1 to 8 do
+begin
+if (Board[i,j]<>nil) and (Board[i,j].kolor='biale') and (Board[i,j].rodzaj<>'krol') then
+begin
+    if Board[i,j].rodzaj='skoczek' then
+    begin
+        if JestGoniec=true then
+        Exit (False);
+        JestGoniec:=true;
+    end;
+
+    if Board[i,j].rodzaj='goniec' then
+    begin
+        if JestSkoczek=true then
+        Exit (False);
+        JestSkoczek:=true;
+    end;
+end;
+end;
+
+
+//sprawdzamy czarne {wiem wiem, mozna to zrobic w jednej funkcji... }
+for i:=1 to 8 do
+for j:=1 to 8 do
+begin
+if (Board[i,j]<>nil) and (Board[i,j].kolor='czarne') and (Board[i,j].rodzaj<> 'krol') then
+begin
+    if (Board[i,j].rodzaj='pion') then //jezeli pion to czy moze sie ruszyc
+    begin
+        if Board[i-1,j]<>nil then
+        begin
+        if (Board[i-1,j].rodzaj='pion') and (Board[i-1,j].kolor<>'biale')
+        then Exit (False);
+        end;
+    end;
+
+    if (Board[i,j].rodzaj='wieza') or (Board[i,j].rodzaj='hetman') then
+    Exit (False);
+
+end;
+
+end;
+
+//sprawdzamy czy sa tylko dwa gonce
+
+JestGoniec:=false;
+
+for i:=1 to 8 do
+for j:=1 to 8 do
+begin
+if (Board[i,j]<>nil) and (Board[i,j].kolor='czarne') and (Board[i,j].rodzaj<> 'krol') then
+begin
+    if Board[i,j].rodzaj='goniec' then
+    begin
+        if JestGoniec=true then
+        Exit (False);
+
+        JestGoniec:=true;
+    end;
+end;
+end;
+
+//sprawdzamy czy sa goniec i skoczek
+
+JestSkoczek:=false;
+JestGoniec:=false;
+
+for i:=1 to 8 do
+for j:=1 to 8 do
+begin
+if (Board[i,j]<>nil) and (Board[i,j].kolor='czarne') and (Board[i,j].rodzaj<>'krol') then
+begin
+    if Board[i,j].rodzaj='skoczek' then
+    begin
+        if JestGoniec=true then
+        Exit (False);
+        JestGoniec:=true;
+    end;
+
+    if Board[i,j].rodzaj='goniec' then
+    begin
+        if JestSkoczek=true then
+        Exit (False);
+        JestSkoczek:=true;
+    end;
+end;
+end;
+
+
+
+Result:=True;
+end;
 
 {--------------------------------------------------------------------------------------}
 
@@ -2100,8 +4104,38 @@ end;
                    end;
                 end;
              end;
+
+         {jezeli gramy czarny odwracamy krola i hetmana}
+        if GramKolorem='czarne' then
+        begin
+
+          Board[4,4]:=Board[1,4];
+          Board[1,4]:=Board[1,5];
+          Board[1,5]:=Board[4,4];
+          Board[4,4]:=nil;
+
+          Board[1,4].pole:=DaneBoard[1,4].pole;
+          Board[1,4].pozycja:=Point(DaneBoard[1,4].X, DaneBoard[1,4].Y);
+          Board[1,5].pole:=DaneBoard[1,5].pole;
+          Board[1,5].pozycja:=Point(DaneBoard[1,5].X, DaneBoard[1,5].Y);
+
+          Board[4,4]:=Board[8,4];
+          Board[8,4]:=Board[8,5];
+          Board[8,5]:=Board[4,4];
+          Board[4,4]:=nil;
+
+          Board[8,4].pole:=DaneBoard[8,4].pole;
+          Board[8,4].pozycja:=Point(DaneBoard[8,4].X, DaneBoard[8,4].Y);
+          Board[8,5].pole:=DaneBoard[8,5].pole;
+          Board[8,5].pozycja:=Point(DaneBoard[8,5].X, DaneBoard[8,5].Y);
+
+        end;
+
+
          PaintBox1.Enabled:=True;
-    end;
+        end;
+
+
 
 procedure TForm1.Button1Click(Sender: TObject);
 var
@@ -2124,8 +4158,17 @@ end;
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
+var
+    x:TPoint;
 begin
+x:=ZnajdzIJbyPole(Edit2.Text);
   WykonajRuch(Edit1.Text,Edit2.Text,Edit3.Text);
+  ZapiszRuch(Edit1.Text,Edit2.Text,Board[x.x,x.y].rodzaj,Board[x.x,x.y].kolor,'');
+
+ if KogoRuch='biale' then KogoRuch:='czarne'
+else KogoRuch:='biale';
+
+
 end;
 
 procedure TForm1.PaintBox1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -2199,9 +4242,10 @@ end;
 procedure TForm1.PaintBox1MouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
-  tmp:TBierka;
+  tmp,tmpWieza:TBierka;
   okKrol,okRuch:boolean;
-  z:TPoint;
+  z,i,TMPx, TMPy:TPoint;
+  tlo:TPortableNetworkGraphic;
 begin
 okKrol:=true;
 okRuch:=false;
@@ -2223,21 +4267,110 @@ end;
   DadBierka^.pole:=ZnajdzPolebyXY(X,Y);
   DadBierka^.pozycja := ZnajdzXYbyPole(ZnajdzPolebyXY(X,Y));
 
-
-if KogoRuch='biale' then
-   okKrol:=SprawdzKrolaBialego(PolePlansza, ZnajdzPolebyXY(X,Y));
+   okKrol:=SprawdzKrola(PolePlansza, ZnajdzPolebyXY(X,Y));
 
 okRuch:=CzyLegalnyRuch(ZnajdzPolebyXY(X,Y));
 
 if (okKrol=true) and (okRuch=true) then
 begin
 
+//sprawdzamy czy biale zrobily roszade krotka
+if (DaneBoard[PolePlansza.X,PolePlansza.y].pole='E1')and(ZnajdzPolebyXY(X,Y)='G1')
+and (DadBierka^.rodzaj='krol') then
+begin
+    WykonajRuch('H1','F1','roszada');
+end;
+
+//sprawdzamy czy biale zrobily roszade dluga
+if (DaneBoard[PolePlansza.X,PolePlansza.y].pole='E1')and(ZnajdzPolebyXY(X,Y)='C1')
+and (DadBierka^.rodzaj='krol') then
+begin
+    WykonajRuch('A1','D1','roszada');
+end;
+
+//sprawdzamy czy czarne zrobily roszade krotka
+if (DaneBoard[PolePlansza.X,PolePlansza.y].pole='E8')and(ZnajdzPolebyXY(X,Y)='G8')
+and (DadBierka^.rodzaj='krol') then
+begin
+    WykonajRuch('H8','F8','roszada');
+end;
+
+//sprawdzamy czy czarne zrobily roszade dluga
+if (DaneBoard[PolePlansza.X,PolePlansza.y].pole='E8')and(ZnajdzPolebyXY(X,Y)='C8')
+and (DadBierka^.rodzaj='krol') then
+begin
+    WykonajRuch('A8','D8','roszada');
+end;
+
+//wykonujemy ruch
+if Board[(Y div 80)+1,(X div 80)+1]<> nil then
+FreeAndNil(Board[(Y div 80)+1,(X div 80)+1]);
+
      tmp:=DadBierka^;
      Board[PolePlansza.X, PolePlansza.Y] := nil;
      Board[(Y div 80)+1,(X div 80)+1] := tmp;
 
-     if KogoRuch='biale' then KogoRuch:='czarne'
-     else KogoRuch:='biale';
+
+
+     //sprawdzamy czy pionek doszedl do konca planszy
+     if tmp.rodzaj='pion' then
+     begin
+          i:=ZnajdzIJByPole(tmp.pole);
+
+          if (tmp.kolor='biale')and(i.x=1)then
+          begin
+              Form2.ShowModal;
+                  if Form2.wybor='hetman' then
+                  begin
+                  Board[(Y div 80)+1,(X div 80)+1].obraz.LoadFromFile('img/HetmanBialy.png');
+                  Board[(Y div 80)+1,(X div 80)+1].rodzaj:='hetman';
+                  end;
+                  if Form2.wybor='wieza' then
+                  begin
+                  Board[(Y div 80)+1,(X div 80)+1].obraz.LoadFromFile('img/WiezaBiala.png');
+                  Board[(Y div 80)+1,(X div 80)+1].rodzaj:='wieza';
+                  end;
+                  if Form2.wybor='goniec' then
+                  begin
+                  Board[(Y div 80)+1,(X div 80)+1].obraz.LoadFromFile('img/GoniecBialy.png');
+                  Board[(Y div 80)+1,(X div 80)+1].rodzaj:='goniec';
+                  end;
+                  if Form2.wybor='skoczek' then
+                  begin
+                  Board[(Y div 80)+1,(X div 80)+1].obraz.LoadFromFile('img/SkoczekBialy.png');
+                  Board[(Y div 80)+1,(X div 80)+1].rodzaj:='skoczek';
+                  end;
+          end;
+             if (tmp.kolor='czarne')and(i.x=1)then
+             begin
+                 Form2.ShowModal;
+                     if Form2.wybor='hetman' then
+                     begin
+                     Board[(Y div 80)+1,(X div 80)+1].obraz.LoadFromFile('img/HetmanCzarny.png');
+                     Board[(Y div 80)+1,(X div 80)+1].rodzaj:='hetman';
+                     end;
+                     if Form2.wybor='wieza' then
+                     begin
+                     Board[(Y div 80)+1,(X div 80)+1].obraz.LoadFromFile('img/WiezaCzarna.png');
+                     Board[(Y div 80)+1,(X div 80)+1].rodzaj:='wieza';
+                     end;
+                     if Form2.wybor='goniec' then
+                     begin
+                     Board[(Y div 80)+1,(X div 80)+1].obraz.LoadFromFile('img/GoniecCzarny.png');
+                     Board[(Y div 80)+1,(X div 80)+1].rodzaj:='goniec';
+                     end;
+                     if Form2.wybor='skoczek' then
+                     begin
+                     Board[(Y div 80)+1,(X div 80)+1].obraz.LoadFromFile('img/SkoczekCzarny.png');
+                     Board[(Y div 80)+1,(X div 80)+1].rodzaj:='skoczek';
+                     end;
+             end;
+
+     end;
+
+
+        if KogoRuch='biale' then KogoRuch:='czarne'
+        else KogoRuch:='biale';
 
      KolorowanieRuchu.ok:=true;
      KolorowanieRuchu.Z:=PolePlansza;
@@ -2254,7 +4387,23 @@ begin
          MozliweWPrzelocie.ok:=false;
      end;
 
-     ZapiszRuch(DaneBoard[PolePlansza.X, PolePlansza.Y].pole, ZnajdzPolebyXY(X,Y), Board[KolorowanieRuchu.Na.x,KolorowanieRuchu.Na.y].rodzaj, Board[KolorowanieRuchu.Na.x,KolorowanieRuchu.Na.y].kolor, '');
+    ZapiszRuch(DaneBoard[PolePlansza.X, PolePlansza.Y].pole, ZnajdzPolebyXY(X,Y), Board[KolorowanieRuchu.Na.x,KolorowanieRuchu.Na.y].rodzaj, Board[KolorowanieRuchu.Na.x,KolorowanieRuchu.Na.y].kolor, '');
+
+    //sprawdzamy czy mat albo pat !!!!!!!!!!!!!!!!!
+    if CzyMat(KogoRuch)=true then
+       begin
+          ShowMessage('MAT');
+       end;
+
+    if CzyPat(KogoRuch)=true then
+    begin
+       ShowMessage('PAT');
+    end;
+
+    if CzyRemis=true then
+    begin
+       ShowMessage('REMIS!');
+    end;
 
 end
 else
@@ -2271,6 +4420,7 @@ end;
 
   DAD:=false;
   SetLength(TablicaRuchow, 0);
+
  end;
 
    PaintBox1.Invalidate;
@@ -2290,17 +4440,10 @@ var
   pole:TPoint;
 begin
 
+
 {--- rysowanie planszy ---}
 
-if GramKolorem='biale' then
-begin
 white:=false;
-end
-else
-begin
-white:=true;
-end;
-
 
  PaintBox1.Canvas.Pen.Color := clWhite;
 
