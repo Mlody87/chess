@@ -3975,9 +3975,27 @@ end;
 
 function TForm1.CzyPat(ruch:string):boolean;
 var
-i,j:integer;
+i,j,L:integer;
 PozycjaKrola:TPoint;
 begin
+
+L:=Length(PrzebiegPartii);
+
+if L>=12 then //sprawdzamy czy trzykrotne powtorzenie ruchow
+begin
+if (PrzebiegPartii[L-1].Z=PrzebiegPartii[L-3].NA) and (PrzebiegPartii[L-1].NA=PrzebiegPartii[L-3].Z) and //sprawdzamy dla pierwszego
+   (PrzebiegPartii[L-3].Z=PrzebiegPartii[L-5].NA) and (PrzebiegPartii[L-3].NA=PrzebiegPartii[L-5].Z) and
+   (PrzebiegPartii[L-5].Z=PrzebiegPartii[L-7].NA) and (PrzebiegPartii[L-5].NA=PrzebiegPartii[L-7].Z) and
+   (PrzebiegPartii[L-7].Z=PrzebiegPartii[L-9].NA) and (PrzebiegPartii[L-7].NA=PrzebiegPartii[L-9].Z) and
+   (PrzebiegPartii[L-9].Z=PrzebiegPartii[L-11].NA) and (PrzebiegPartii[L-9].NA=PrzebiegPartii[L-11].Z) and
+   (PrzebiegPartii[L-2].Z=PrzebiegPartii[L-4].NA) and (PrzebiegPartii[L-2].NA=PrzebiegPartii[L-4].Z) and //sprawdzamy dla drugiego
+   (PrzebiegPartii[L-4].Z=PrzebiegPartii[L-6].NA) and (PrzebiegPartii[L-4].NA=PrzebiegPartii[L-6].Z) and
+   (PrzebiegPartii[L-6].Z=PrzebiegPartii[L-8].NA) and (PrzebiegPartii[L-6].NA=PrzebiegPartii[L-8].Z) and
+   (PrzebiegPartii[L-8].Z=PrzebiegPartii[L-10].NA) and (PrzebiegPartii[L-8].NA=PrzebiegPartii[L-10].Z) and
+   (PrzebiegPartii[L-10].Z=PrzebiegPartii[L-12].NA) and (PrzebiegPartii[L-10].NA=PrzebiegPartii[L-12].Z) then
+   Exit (True); //jezeli trzykrotne powtorzenie ruchu przez kazdego gracza to remis
+
+end;
 
 for i:=1 to 8 do
 for j:=1 to 8 do
@@ -3993,7 +4011,6 @@ begin
 end;
 
 Result:=True;
-
 
 end;
 
