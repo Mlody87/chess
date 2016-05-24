@@ -2329,7 +2329,7 @@ B:=szachownica;
 
 //sprawdzamy ataki pionow
 
-
+if MojKolor=GramKolorem then begin
 if (p.X-1>=1) and (p.Y-1>=1) then
 begin
    if B^[p.X-1, p.Y-1]<>nil then begin
@@ -2348,6 +2348,32 @@ begin
         if B^[p.x-1, p.Y+1].rodzaj='pion' then wynik:=true;
      end;
    end;
+end;
+
+end
+else
+begin
+
+   if (p.X+1<=8) and (p.Y-1>=1) then
+   begin
+      if B^[p.X+1, p.Y-1]<>nil then begin
+        if B^[p.X+1, p.Y-1].kolor=MojKolor then
+        begin
+           if B^[p.x+1, p.Y-1].rodzaj='pion' then wynik:=true;
+        end;
+      end;
+   end;
+
+   if (p.X+1<=8) and (p.Y+1<=8) then
+   begin
+      if B^[p.X+1, p.Y+1]<>nil then begin
+        if B^[p.X+1, p.Y+1].kolor=MojKolor then
+        begin
+           if B^[p.x+1, p.Y+1].rodzaj='pion' then wynik:=true;
+        end;
+      end;
+   end;
+
 end;
 
 //jezeli nie sprawdzamy roszady to sprawdzamy tez ataki konia
@@ -2644,7 +2670,7 @@ B:=szachownica;
                   end;
 
 //sprawdzamy ataki pionow
-
+if MojKolor=GramKolorem then begin
 if (p.X-1>=1) and (p.Y-1>=1) then
 begin
    if B^[p.X-1, p.Y-1]<>nil then begin
@@ -2663,6 +2689,32 @@ begin
         if B^[p.x-1, p.Y+1].rodzaj='pion' then wynik:=true;
      end;
    end;
+end;
+
+end
+else
+begin
+
+   if (p.X+1<=8) and (p.Y-1>=1) then
+begin
+   if B^[p.X+1, p.Y-1]<>nil then begin
+     if B^[p.X+1, p.Y-1].kolor<>MojKolor then
+     begin
+        if B^[p.x+1, p.Y-1].rodzaj='pion' then wynik:=true;
+     end;
+   end;
+end;
+
+if (p.X+1<=8) and (p.Y+1<=8) then
+begin
+   if B^[p.X+1, p.Y+1]<>nil then begin
+     if B^[p.X+1, p.Y+1].kolor<>MojKolor then
+     begin
+        if B^[p.x+1, p.Y+1].rodzaj='pion' then wynik:=true;
+     end;
+   end;
+end;
+
 end;
 
 //jezeli nie sprawdzamy roszady to sprawdzamy tez ataki konia
@@ -2747,7 +2799,7 @@ end;  end;
 
 end;
 
-//sprawdzamy czy broni atakuje        //OUT OF BOUNDS!     CZY ABY NA PEWNO JEST OK?
+//sprawdzamy czy broni atakuje
 
 if (p.x-1>=1) then begin
 if (B^[p.x-1,p.y]<>nil) then begin
@@ -2976,6 +3028,8 @@ MojKolor:=B^[p.X,p.Y].kolor;
                   end;
 
 //sprawdzamy piony
+
+if MojKolor=GramKolorem then begin
 if (p.X-1>=1) and (p.y-1>=1) then begin
     if B^[p.X-1,p.Y-1]<>nil then
     begin
@@ -2996,6 +3050,34 @@ if (p.X-1>=1) and (p.y+1<=8) then begin
 	wynik[High(wynik)]:=Point(p.x-1,p.y+1);
         end;
     end;
+end;
+
+end
+else
+begin
+
+   if (p.X+1<=8) and (p.y-1>=1) then begin
+    if B^[p.X+1,p.Y-1]<>nil then
+    begin
+        if (B^[p.X+1,p.Y-1].rodzaj='pion') and (B^[p.X+1,p.Y-1].kolor<>MojKolor) then
+        begin
+	SetLength(wynik, Length(wynik)+1);
+	wynik[High(wynik)]:=Point(p.x+1,p.y-1);
+        end;
+    end;
+end;
+
+if (p.X+1<=8) and (p.y+1<=8) then begin
+    if B^[p.X+1,p.Y+1]<>nil then
+    begin
+        if (B^[p.X+1,p.Y+1].rodzaj='pion') and (B^[p.X+1,p.Y+1].kolor<>MojKolor) then
+        begin
+	SetLength(wynik, Length(wynik)+1);
+	wynik[High(wynik)]:=Point(p.x+1,p.y+1);
+        end;
+    end;
+end;
+
 end;
 
 
@@ -3119,7 +3201,7 @@ end;
     end;
     end;
     end;
-    
+
     if (p.y-1>=1) then begin
     if (B^[p.x,p.y-1]<>nil) then begin
     if (B^[p.x,p.y-1].rodzaj='krol') and (B^[p.x,p.y-1].kolor<>MojKolor) then
@@ -3129,7 +3211,7 @@ end;
     end;
     end;
     end;
-    
+
     if (p.y+1<=8) then begin
     if (B^[p.x,p.y+1]<>nil) then begin
     if (B^[p.x,p.y+1].rodzaj='krol') and (B^[p.x,p.y+1].kolor<>MojKolor) then
@@ -3139,7 +3221,7 @@ end;
     end;
     end;
     end;
-    
+
     if (p.x-1>=1) and (p.y-1>=1) then begin
     if (B^[p.x-1,p.y-1]<>nil) then begin
     if (B^[p.x-1,p.y-1].rodzaj='krol') and (B^[p.x-1,p.y-1].kolor<>MojKolor) then
@@ -3149,7 +3231,7 @@ end;
     end;
     end;
     end;
-    
+
     if (p.x-1>=1) and (p.y+1<=8) then begin
     if (B^[p.x-1,p.y+1]<>nil) then begin
     if (B^[p.x-1,p.y+1].rodzaj='krol') and (B^[p.x-1,p.y+1].kolor<>MojKolor) then
@@ -3159,7 +3241,7 @@ end;
     end;
     end;
     end;
-    
+
     if (p.x+1<=8) and (p.y-1>=1) then begin
     if (B^[p.x+1,p.y-1]<>nil) then begin
     if (B^[p.x+1,p.y-1].rodzaj='krol') and (B^[p.x+1,p.y-1].kolor<>MojKolor) then
@@ -3169,7 +3251,7 @@ end;
     end;
     end;
     end;
-    
+
     if (p.x+1<=8) and (p.y+1<=8) then begin
     if (B^[p.x+1,p.y+1]<>nil) then begin
     if (B^[p.x+1,p.y+1].rodzaj='krol') and (B^[p.x+1,p.y+1].kolor<>MojKolor) then
@@ -3277,7 +3359,7 @@ if (K.x-1>=1) and (K.y+1<=8) then begin  //do gory w prawo
 end;
 
 if (K.x-1>=1) and (K.y-1>=1) then begin  //do gory w lewo
-   if Board[K.X+1, K.Y-1]=nil then
+   if Board[K.X-1, K.Y-1]=nil then
    begin
       if CzyCosAtakujePole(DaneBoard[K.X-1,K.Y-1].pole, 'ruch', MojKolor, @Board)=false then ma:=True;
    end
@@ -3964,10 +4046,14 @@ if (Board[i,j]<>nil) and (Board[i,j].kolor='biale') and (Board[i,j].rodzaj<> 'kr
 begin
     if (Board[i,j].rodzaj='pion') then //jezeli pion to czy moze sie ruszyc
     begin
-        if Board[i-1,j]<>nil then
+        if Board[i-1,j]=nil then
         begin
-        if (Board[i-1,j].rodzaj='pion') and (Board[i-1,j].kolor<>'biale')
-        then Exit (False);
+        Exit (False);
+        end
+        else
+        begin
+            if (Board[i-1,j].rodzaj<>'pion') then
+            Exit (False);
         end;
     end;
 
@@ -3989,7 +4075,7 @@ if (Board[i,j]<>nil) and (Board[i,j].kolor='biale') and (Board[i,j].rodzaj<> 'kr
 begin
     if Board[i,j].rodzaj='goniec' then
     begin
-        if (JestGoniec=true) then begin 
+        if (JestGoniec=true) then begin
         if DaneBoard[i,j].KolorPola<>kolor then
         Exit (False);
         end;
@@ -4035,10 +4121,14 @@ if (Board[i,j]<>nil) and (Board[i,j].kolor='czarne') and (Board[i,j].rodzaj<> 'k
 begin
     if (Board[i,j].rodzaj='pion') then //jezeli pion to czy moze sie ruszyc
     begin
-        if Board[i-1,j]<>nil then
+        if Board[i-1,j]=nil then
         begin
-        if (Board[i-1,j].rodzaj='pion') and (Board[i-1,j].kolor<>'biale')
-        then Exit (False);
+        Exit (False);
+        end
+        else
+        begin
+            if (Board[i-1,j].rodzaj<>'pion') then
+            Exit (False);
         end;
     end;
 
@@ -4252,9 +4342,10 @@ end;
           Board[8,5].pozycja:=Point(DaneBoard[8,5].X, DaneBoard[8,5].Y);
 
         end;
-        
-        white:=true;
+
+        white:=false;
         for i:=1 to 8 do begin
+           if white=true then begin white:=false; end else begin white:=true; end;
         for j:=1 to 8 do begin
         	if white=true then begin
         	DaneBoard[i,j].KolorPola:='biale';
@@ -4263,8 +4354,8 @@ end;
         	begin
         	DaneBoard[i,j].KolorPola:='czarne';
         	end;
-        	
-        	if white=true then begin white:=false; end else begin white:=true; end; 
+
+        	if white=true then begin white:=false; end else begin white:=true; end;
         end;
         end;
 
@@ -4313,11 +4404,14 @@ procedure TForm1.PaintBox1MouseDown(Sender: TObject; Button: TMouseButton;
 var
   i,j:integer;
   pol:string;
+  tmp:TPoint;
 begin
 
 pol:=ZnajdzPolebyXY(X,Y);
 Memo1.Lines.add(pol);
 memo1.lines.add('X: '+inttostr(X)+', Y: '+inttostr(Y));
+tmp:=znajdzIjbyPole(pol);
+memo1.Lines.Add('kolor pola: '+DaneBoard[tmp.x,tmp.y].KolorPola);
 
   for i:=1 to 8 do
   for j:=1 to 8 do
