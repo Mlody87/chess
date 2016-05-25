@@ -4229,7 +4229,7 @@ end;
 
 {------------------------------------------------------------------------------------------------------------}
 
-procedure TForm1.PaintBox1MouseDown(Sender: TObject; Button: TMouseButton;
+procedure TForm3.PaintBox1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
   i,j:integer;
@@ -4268,7 +4268,7 @@ memo1.Lines.Add('kolor pola: '+DaneBoard[tmp.x,tmp.y].KolorPola);
 
 end;
 
-procedure TForm1.PaintBox1MouseMove(Sender: TObject; Shift: TShiftState; X,
+procedure TForm3.PaintBox1MouseMove(Sender: TObject; Shift: TShiftState; X,
   Y: Integer);
 begin
   if (DAD) then
@@ -4300,7 +4300,7 @@ begin
          end;
 end;
 
-procedure TForm1.PaintBox1MouseUp(Sender: TObject; Button: TMouseButton;
+procedure TForm3.PaintBox1MouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
   tmp,tmpWieza:TBierka;
@@ -4492,7 +4492,7 @@ end;
 
 {-----  PREZENTACJA  -----}
 
-procedure TForm1.PaintBox1Paint(Sender: TObject);
+procedure TForm3.PaintBox1Paint(Sender: TObject);
 var
   i,j,a:integer;
   Punkt:TPoint;
