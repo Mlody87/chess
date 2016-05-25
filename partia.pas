@@ -4049,7 +4049,7 @@ var
 begin
 KolorowanieRuchu.ok:=false;
 KolorowanieKrola.ok:=false;
-KogoRuch:='biale';
+KogoRuch:='CzekamyNaStart';
 MozliweWPrzelocie.ok:=false;
 
  odczyt:=TStringList.Create;
