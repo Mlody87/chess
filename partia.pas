@@ -1,7 +1,6 @@
 unit partia;
 
 {$mode objfpc}{$H+}
-//                                           007|19|biale|E4|cos|cos
 
 
 
@@ -4236,6 +4235,9 @@ var
   pol:string;
   tmp:TPoint;
 begin
+
+if GramKolorem<>KogoRuch then
+Exit;
 
 pol:=ZnajdzPolebyXY(X,Y);
 Memo1.Lines.add(pol);
