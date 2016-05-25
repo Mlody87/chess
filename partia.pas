@@ -4227,4 +4227,410 @@ end;
 
 end;
 
+{------------------------------------------------------------------------------------------------------------}
+
+procedure TForm1.PaintBox1MouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+var
+  i,j:integer;
+  pol:string;
+  tmp:TPoint;
+begin
+
+pol:=ZnajdzPolebyXY(X,Y);
+Memo1.Lines.add(pol);
+memo1.lines.add('X: '+inttostr(X)+', Y: '+inttostr(Y));
+tmp:=znajdzIjbyPole(pol);
+memo1.Lines.Add('kolor pola: '+DaneBoard[tmp.x,tmp.y].KolorPola);
+
+  for i:=1 to 8 do
+  for j:=1 to 8 do
+  begin
+   if Board[i,j]<>nil then
+   begin
+   if pol=Board[i,j].pole then
+  begin
+    if Board[i,j].kolor=KogoRuch then begin
+    DAD:=true;
+    DadBierka:=@Board[i,j];
+    PunktPlansza := Point(X, Y);
+    PolePlansza:=Point(i,j);
+    memo1.lines.add('I: '+inttostr(i)+', J: '+inttostr(j));
+    SetLength(TablicaRuchow, 0);
+    TablicaRuchow:=MozliweRuchy(Board[i,j].pole);
+    Break;
+    end;
+  end;
+
+  end;
+
+  end;
+
+end;
+
+procedure TForm1.PaintBox1MouseMove(Sender: TObject; Shift: TShiftState; X,
+  Y: Integer);
+begin
+  if (DAD) then
+         begin
+
+
+         if X>PunktPlansza.X then
+         begin
+              DADBierka^.pozycja.X   := DADBierka^.pozycja.X+(X-PunktPlansza.x);
+              PunktPlansza.X:=X;
+         end;
+         if X<PunktPlansza.X then
+         begin
+         DADBierka^.pozycja.X   := DADBierka^.pozycja.X-(PunktPlansza.x-X);
+         PunktPlansza.X:=X;
+         end;
+         if Y<PunktPlansza.Y then
+         begin
+              DADBierka^.pozycja.Y    := DADBierka^.pozycja.Y-(PunktPlansza.Y-Y);
+              PunktPlansza.y:=Y;
+         end;
+         if Y>PunktPlansza.Y then
+         begin
+              DADBierka^.pozycja.Y    := DADBierka^.pozycja.Y+(Y-PunktPlansza.Y);
+              PunktPlansza.Y:=Y;
+         end;
+
+         PaintBox1.Invalidate;
+         end;
+end;
+
+procedure TForm1.PaintBox1MouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+var
+  tmp,tmpWieza:TBierka;
+  okKrol,okRuch:boolean;
+  z,i,TMPx, TMPy:TPoint;
+  tlo:TPortableNetworkGraphic;
+begin
+okKrol:=true;
+okRuch:=false;
+
+ if DAD then
+ begin
+
+ if ZnajdzPolebyXY(X,Y)=DaneBoard[PolePlansza.X,PolePlansza.Y].pole then
+begin
+  DadBierka^.pole:=DaneBoard[PolePlansza.X, PolePlansza.Y].pole;
+  DadBierka^.pozycja := ZnajdzXYbyPole(DadBierka^.pole);
+  DAD:=false;
+  SetLength(TablicaRuchow, 0);
+  PaintBox1.Invalidate;
+  Exit;
+end;
+
+
+  DadBierka^.pole:=ZnajdzPolebyXY(X,Y);
+  DadBierka^.pozycja := ZnajdzXYbyPole(ZnajdzPolebyXY(X,Y));
+
+   okKrol:=SprawdzKrola(PolePlansza, ZnajdzPolebyXY(X,Y));
+
+okRuch:=CzyLegalnyRuch(ZnajdzPolebyXY(X,Y));
+
+if (okKrol=true) and (okRuch=true) then
+begin
+
+//sprawdzamy czy biale zrobily roszade krotka
+if (DaneBoard[PolePlansza.X,PolePlansza.y].pole='E1')and(ZnajdzPolebyXY(X,Y)='G1')
+and (DadBierka^.rodzaj='krol') then
+begin
+    WykonajRuch('H1','F1','roszada');
+end;
+
+//sprawdzamy czy biale zrobily roszade dluga
+if (DaneBoard[PolePlansza.X,PolePlansza.y].pole='E1')and(ZnajdzPolebyXY(X,Y)='C1')
+and (DadBierka^.rodzaj='krol') then
+begin
+    WykonajRuch('A1','D1','roszada');
+end;
+
+//sprawdzamy czy czarne zrobily roszade krotka
+if (DaneBoard[PolePlansza.X,PolePlansza.y].pole='E8')and(ZnajdzPolebyXY(X,Y)='G8')
+and (DadBierka^.rodzaj='krol') then
+begin
+    WykonajRuch('H8','F8','roszada');
+end;
+
+//sprawdzamy czy czarne zrobily roszade dluga
+if (DaneBoard[PolePlansza.X,PolePlansza.y].pole='E8')and(ZnajdzPolebyXY(X,Y)='C8')
+and (DadBierka^.rodzaj='krol') then
+begin
+    WykonajRuch('A8','D8','roszada');
+end;
+
+//wykonujemy ruch
+if Board[(Y div 80)+1,(X div 80)+1]<> nil then
+FreeAndNil(Board[(Y div 80)+1,(X div 80)+1]);
+
+     tmp:=DadBierka^;
+     Board[PolePlansza.X, PolePlansza.Y] := nil;
+     Board[(Y div 80)+1,(X div 80)+1] := tmp;
+
+
+
+     //sprawdzamy czy pionek doszedl do konca planszy
+     if tmp.rodzaj='pion' then
+     begin
+          i:=ZnajdzIJByPole(tmp.pole);
+
+          if (tmp.kolor='biale')and(i.x=1)then
+          begin
+              Form2.ShowModal;
+                  if Form2.wybor='hetman' then
+                  begin
+                  Board[(Y div 80)+1,(X div 80)+1].obraz.LoadFromFile('img/HetmanBialy.png');
+                  Board[(Y div 80)+1,(X div 80)+1].rodzaj:='hetman';
+                  end;
+                  if Form2.wybor='wieza' then
+                  begin
+                  Board[(Y div 80)+1,(X div 80)+1].obraz.LoadFromFile('img/WiezaBiala.png');
+                  Board[(Y div 80)+1,(X div 80)+1].rodzaj:='wieza';
+                  end;
+                  if Form2.wybor='goniec' then
+                  begin
+                  Board[(Y div 80)+1,(X div 80)+1].obraz.LoadFromFile('img/GoniecBialy.png');
+                  Board[(Y div 80)+1,(X div 80)+1].rodzaj:='goniec';
+                  end;
+                  if Form2.wybor='skoczek' then
+                  begin
+                  Board[(Y div 80)+1,(X div 80)+1].obraz.LoadFromFile('img/SkoczekBialy.png');
+                  Board[(Y div 80)+1,(X div 80)+1].rodzaj:='skoczek';
+                  end;
+          end;
+             if (tmp.kolor='czarne')and(i.x=1)then
+             begin
+                 Form2.ShowModal;
+                     if Form2.wybor='hetman' then
+                     begin
+                     Board[(Y div 80)+1,(X div 80)+1].obraz.LoadFromFile('img/HetmanCzarny.png');
+                     Board[(Y div 80)+1,(X div 80)+1].rodzaj:='hetman';
+                     end;
+                     if Form2.wybor='wieza' then
+                     begin
+                     Board[(Y div 80)+1,(X div 80)+1].obraz.LoadFromFile('img/WiezaCzarna.png');
+                     Board[(Y div 80)+1,(X div 80)+1].rodzaj:='wieza';
+                     end;
+                     if Form2.wybor='goniec' then
+                     begin
+                     Board[(Y div 80)+1,(X div 80)+1].obraz.LoadFromFile('img/GoniecCzarny.png');
+                     Board[(Y div 80)+1,(X div 80)+1].rodzaj:='goniec';
+                     end;
+                     if Form2.wybor='skoczek' then
+                     begin
+                     Board[(Y div 80)+1,(X div 80)+1].obraz.LoadFromFile('img/SkoczekCzarny.png');
+                     Board[(Y div 80)+1,(X div 80)+1].rodzaj:='skoczek';
+                     end;
+             end;
+
+     end;
+
+
+        if KogoRuch='biale' then KogoRuch:='czarne'
+        else KogoRuch:='biale';
+
+     KolorowanieRuchu.ok:=true;
+     KolorowanieRuchu.Z:=PolePlansza;
+     KolorowanieRuchu.NA:=Point((Y div 80)+1,(X div 80)+1);
+
+     if MozliweWPrzelocie.ok then
+     begin
+         if (MozliweWPrzelocie.Z=DaneBoard[PolePlansza.X, PolePlansza.Y].pole) and
+            (MozliweWPrzelocie.NA=ZnajdzPolebyXY(X,Y)) then
+            begin
+               z:=ZnajdzIJbyPole(MozliweWPrzelocie.bite);
+               Board[z.x,z.y]:=nil;
+            end;
+         MozliweWPrzelocie.ok:=false;
+     end;
+
+    ZapiszRuch(DaneBoard[PolePlansza.X, PolePlansza.Y].pole, ZnajdzPolebyXY(X,Y), Board[KolorowanieRuchu.Na.x,KolorowanieRuchu.Na.y].rodzaj, Board[KolorowanieRuchu.Na.x,KolorowanieRuchu.Na.y].kolor, '');
+
+    //sprawdzamy czy mat albo pat !!!!!!!!!!!!!!!!!
+    if CzyMat(KogoRuch)=true then
+       begin
+          ShowMessage('MAT');
+       end;
+
+    if CzyPat(KogoRuch)=true then
+    begin
+       ShowMessage('PAT');
+    end;
+
+    if CzyRemis=true then
+    begin
+       ShowMessage('REMIS!');
+    end;
+
+end
+else
+begin
+
+     DadBierka^.pole:=DaneBoard[PolePlansza.X, PolePlansza.Y].pole;
+     DadBierka^.pozycja := ZnajdzXYbyPole(DadBierka^.pole);
+
+end;
+
+  memo1.lines.add('Ruch: '+DaneBoard[PolePlansza.X, PolePlansza.Y].pole+' na '+ZnajdzPolebyXY(X,Y));
+
+
+
+  DAD:=false;
+  SetLength(TablicaRuchow, 0);
+
+ end;
+
+   PaintBox1.Invalidate;
+
+end;
+
+
+
+{-----  PREZENTACJA  -----}
+
+procedure TForm1.PaintBox1Paint(Sender: TObject);
+var
+  i,j,a:integer;
+  Punkt:TPoint;
+  white:boolean;
+  t:TRect;
+  pole:TPoint;
+begin
+
+
+{--- rysowanie planszy ---}
+
+white:=false;
+
+ PaintBox1.Canvas.Pen.Color := clWhite;
+
+
+for i:=0 to 7 do
+begin
+
+          if white then
+          begin
+              white:=false;
+          end
+          else
+          begin
+               white:=true;
+          end;
+
+                    for j:=0 to 7 do
+                    begin
+
+                         t.Left:=(80*j);
+                         t.Top:=(80*i);
+                         t.Right:=(80*j)+81;
+                         t.Bottom:=(80*i)+81;
+
+                                              if white then
+                                              begin
+                                                PaintBox1.Canvas.brush.Color := cl3DLight;
+                                              end
+                                              else
+                                              begin
+                                                PaintBox1.Canvas.brush.Color := clAppWorkspace;
+                                               end;
+
+                          PaintBox1.Canvas.rectangle(t);
+
+                          if white then
+                          begin
+                          white:=false;
+                          end
+                          else
+                          begin
+                          white:=true;
+                          end;
+
+
+                    end;
+end;
+
+
+{ --- kolorujemy ostatni ruch na planszy --- }
+
+if KolorowanieRuchu.ok then
+begin
+
+ PaintBox1.Canvas.brush.Color:=clMoneyGreen;
+
+ t.Left:=(80*(KolorowanieRuchu.Z.y-1));
+ t.Top:=(80*(KolorowanieRuchu.Z.x-1));
+ t.Right:=(80*(KolorowanieRuchu.Z.y-1))+81;
+ t.Bottom:=(80*(KolorowanieRuchu.Z.x-1))+81;
+
+ PaintBox1.Canvas.rectangle(t);
+
+  PaintBox1.Canvas.brush.Color:=$009FCA9F;   //clGreen;
+
+ t.Left:=(80*(KolorowanieRuchu.NA.y-1));
+ t.Top:=(80*(KolorowanieRuchu.NA.x-1));             //optymalizacja - zrobic to odejmowanie
+ t.Right:=(80*(KolorowanieRuchu.NA.y-1))+81;         //przy tworzeniu KolorowanieRuchu
+ t.Bottom:=(80*(KolorowanieRuchu.NA.x-1))+81;
+
+ PaintBox1.Canvas.rectangle(t);
+
+end;
+
+{--- rysujemy mozliwe ruchy jezeli takie sa---}
+
+if Length(TablicaRuchow)>0 then
+begin
+
+     for a:=0 to Length(TablicaRuchow)-1 do
+     begin
+           pole:=ZnajdzIJbyPole(TablicaRuchow[a]);
+
+           PaintBox1.Canvas.brush.Color:=$00AAFFFF;
+
+            t.Left:=(80*(pole.y-1));
+            t.Top:=(80*(pole.x-1));
+            t.Right:=(80*(pole.y-1))+81;
+            t.Bottom:=(80*(pole.x-1))+81;
+
+             PaintBox1.Canvas.rectangle(t);
+     end;
+
+end;
+
+PaintBox1.Canvas.Pen.Color := clBlack;
+
+     PaintBox1.Canvas.MoveTo(0,0);
+     PaintBox1.Canvas.LineTo(640,0);
+
+     PaintBox1.Canvas.MoveTo(640,0);
+     PaintBox1.Canvas.LineTo(640,640);
+
+     PaintBox1.Canvas.MoveTo(0,0);
+     PaintBox1.Canvas.LineTo(0,640);
+
+     PaintBox1.Canvas.MoveTo(0,640);
+     PaintBox1.Canvas.LineTo(640,640);
+
+
+{----    rysowanie figur -----}
+
+      with PaintBox1.Canvas do
+   begin
+   for i:=1 to 8 do
+   begin
+       for j:=1 to 8 do
+       begin
+       if Board[i,j]<>nil then begin
+             Draw(Board[i,j].pozycja.X+5, Board[i,j].pozycja.Y+5, Board[i,j].obraz);
+       end;
+       end;
+       end;
+   end;
+
+
+end;
+
 end.
