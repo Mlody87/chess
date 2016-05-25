@@ -8,13 +8,25 @@ unit partia;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  ExtCtrls;
+  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
+  StdCtrls, Grids, types, StrUtils, Unit2;
 
 type
 
+ TKolorowanieRuchu=record
+    ok:boolean;
+    Z:TPoint;
+    NA:TPoint;
+  end;
+
+  TKolorowanieKrola=record   //np przy szachu
+    ok:boolean;
+    pole:TPoint;
+  end;
+
   TDaneBoard=record
     pole:string;
+    KolorPola:string;
     X:integer;
     Y:integer;
   end;
@@ -29,6 +41,27 @@ type
       pozycja:TPoint;
   end;
 
+  TRuch = record
+     figura:string;
+     kolor:string;
+     Z:string;
+     NA:string;
+     uwagi:string;
+   end;
+
+  TWPrzelocie = record
+     ok:boolean;
+     Z:string;
+     NA:string;
+     bite:string;
+  end;
+
+  TMapaRuchow=array of string;
+
+  TBoard=array[1..8,1..8] of TBierka;
+
+  TTablicaPunktow=array of TPoint;
+
   { TForm3 }
 
   TForm3 = class(TForm)
@@ -39,18 +72,35 @@ type
     PaintBox1: TPaintBox;
     TimerCzasBiale: TTimer;
     TimerCzasCzarne: TTimer;
-
-  procedure FormCreate(Sender: TObject);
-  procedure PaintBox1MouseDown(Sender: TObject; Button: TMouseButton;
-    Shift: TShiftState; X, Y: Integer);
-  procedure PaintBox1MouseMove(Sender: TObject; Shift: TShiftState; X,
-    Y: Integer);
-  procedure PaintBox1MouseUp(Sender: TObject; Button: TMouseButton;
-    Shift: TShiftState; X, Y: Integer);
-  procedure PaintBox1Paint(Sender: TObject);
-  function ZnajdzXYbyPole(poz:string):TPoint;
-  function ZnajdzPolebyXY(X,Y:integer):string;
-  function ZnajdzXYbyIJ(i,j:integer):TPoint;
+    Przebieg: TStringGrid;
+    procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure PaintBox1MouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure PaintBox1MouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
+    procedure PaintBox1MouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure PaintBox1Paint(Sender: TObject);
+    function ZnajdzIJbyPole(pole:string):TPoint;
+    function SprawdzKrola(pole:TPoint; na:string):boolean;
+    function MozliweRuchy(WyjsciowePole:string):TMapaRuchow;
+    function CzyLegalnyRuch(NaPole:string):boolean;
+    function ZapiszRuch(Z,Na,rodzaj,kolor,Uwagi:string):boolean;
+    function OdswiezPrzebieg:boolean;
+    function WykonajRuch(Z,Na,Uwagi:string):boolean;
+    function CzySieRuszal(polozenie:TPoint):boolean;   //do roszady
+    function CzyCosAtakujePole(pozycja,rodzaj,MojKolor:string;szachownica:Pointer):boolean;//do roszady
+    function CzyMat(kolor:string):boolean;  //do mata
+    function CzyKrolMaGdzieUciec(K:TPoint):boolean;
+    function CzyCosBroniPole(pozycja,rodzaj,MojKolor:string;szachownica:Pointer):boolean;
+    function KtoAtakujePole(p:TPoint; szachownica:Pointer):TTablicaPunktow;
+    function CzyMoznaZaslonic(atakowany,atakujacy:TPoint):boolean;
+    function CzyCosStanieNaPolu(pozycja,MojKolor:string;szachownica:Pointer):boolean; //zasloniecie przed matem
+    function CzyPat(ruch:string):boolean;
+    function ZostalTylkoKrol(kolor:string):boolean;
+    function CzyRemis:boolean;
 
   private
     { private declarations }
@@ -60,6 +110,24 @@ type
     KogoRuch:string;
     start:boolean;
     id_partii:integer;
+    
+    Board : TBoard;
+  DaneBoard : array[1..8,1..8] of TDaneBoard;
+
+  DAD:boolean;
+  DadBierka:^TBierka;
+
+  PunktPlansza,PolePlansza:TPoint;
+
+  KogoRuch:string;
+  MozliweWPrzelocie:TWPrzelocie;
+
+  KolorowanieRuchu:TKolorowanieRuchu;
+  KolorowanieKrola:TKolorowanieKrola;
+
+  TablicaRuchow:TMapaRuchow; //lista dozwolonych ruchow na planszy dla bierki
+
+  PrzebiegPartii:array of TRuch; //lista ruchow podczas partii
 
 
   Board : array[1..8,1..8] of TBierka;
