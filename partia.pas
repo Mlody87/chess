@@ -4046,11 +4046,18 @@ var
     odczyt:TStrings;
       i,j,a,NumerPola,obraz:integer;
   kolor:string;
+  white:boolean;
 begin
+KolorowanieRuchu.ok:=false;
+KolorowanieKrola.ok:=false;
+KogoRuch:='biale';
+MozliweWPrzelocie.ok:=false;
+
  odczyt:=TStringList.Create;
  ExtractStrings(['|'], [], PAnsiChar(linia), odczyt);
 
  if odczyt[4] = 'GraszBialymi' then GramKolorem:='biale' else GramKolorem:='czarne';
+ 
  BialeCzas:=StrToInt(odczyt[5]);
  CzarneCzas:=StrToInt(odczyt[5]);
 
@@ -4062,7 +4069,7 @@ begin
  ECzasBiale.Text:=odczyt[5];
  ECzasCzarne.Text:=odczyt[5];
 
- if GramKolorem='biale' then
+if GramKolorem='biale' then
 begin
     for i:=1 to 8 do
         for j:=1 to 8 do
@@ -4173,6 +4180,49 @@ end;
                    end;
                 end;
              end;
+
+         {jezeli gramy czarny odwracamy krola i hetmana}
+        if GramKolorem='czarne' then
+        begin
+
+          Board[4,4]:=Board[1,4];
+          Board[1,4]:=Board[1,5];
+          Board[1,5]:=Board[4,4];
+          Board[4,4]:=nil;
+
+          Board[1,4].pole:=DaneBoard[1,4].pole;
+          Board[1,4].pozycja:=Point(DaneBoard[1,4].X, DaneBoard[1,4].Y);
+          Board[1,5].pole:=DaneBoard[1,5].pole;
+          Board[1,5].pozycja:=Point(DaneBoard[1,5].X, DaneBoard[1,5].Y);
+
+          Board[4,4]:=Board[8,4];
+          Board[8,4]:=Board[8,5];
+          Board[8,5]:=Board[4,4];
+          Board[4,4]:=nil;
+
+          Board[8,4].pole:=DaneBoard[8,4].pole;
+          Board[8,4].pozycja:=Point(DaneBoard[8,4].X, DaneBoard[8,4].Y);
+          Board[8,5].pole:=DaneBoard[8,5].pole;
+          Board[8,5].pozycja:=Point(DaneBoard[8,5].X, DaneBoard[8,5].Y);
+
+        end;
+
+        white:=false;
+        for i:=1 to 8 do begin
+           if white=true then begin white:=false; end else begin white:=true; end;
+        for j:=1 to 8 do begin
+        	if white=true then begin
+        	DaneBoard[i,j].KolorPola:='biale';
+        	end
+        	else
+        	begin
+        	DaneBoard[i,j].KolorPola:='czarne';
+        	end;
+
+        	if white=true then begin white:=false; end else begin white:=true; end;
+        end;
+        end;
+
          PaintBox1.Enabled:=True;
 
 end;
