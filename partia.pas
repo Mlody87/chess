@@ -2021,6 +2021,2011 @@ if bierka = 'krol' then
   end;
 
  end;     
+ 
+ function TForm1.CzyCosBroniPole(pozycja,rodzaj,MojKolor:string;szachownica:Pointer):boolean;
+var
+p:TPoint;
+i,j:integer;
+wynik:boolean;
+B:^TBoard;
+begin
+wynik:=false;
+p:=ZnajdzIJbyPole(pozycja);
+
+B:=szachownica;
+
+//sprawdzamy na lewo od pola
+   for i:=1 to 8 do
+   begin
+      if p.Y-i<1 then Break;
+
+      if B^[p.X, p.Y-i]<> nil then
+      begin
+          if B^[p.X, p.Y-i].kolor = MojKolor then begin
+             if (B^[p.X, p.Y-i].rodzaj='wieza') or (B^[p.X, p.Y-i].rodzaj='hetman') then begin wynik:=true; end;
+             Break;
+      end;
+     end;
+   end;
+
+   //sprawdzamy na prawo od pola
+      for i:=1 to 8 do
+      begin
+         if p.Y+i>8 then Break;
+
+         if B^[p.X, p.Y+i]<> nil then
+         begin
+             if B^[p.X, p.Y+i].kolor = MojKolor then begin
+                if (B^[p.X, p.Y+i].rodzaj='wieza') or (B^[p.X, p.Y+i].rodzaj='hetman') then begin wynik:=true; Break; end;
+                Break;
+         end;
+       end;
+      end;
+
+      //sprawdzamy w gore od pola
+         for i:=1 to 8 do
+         begin
+            if p.X-i<1 then Break;
+
+            if B^[p.X-i, p.Y]<> nil then
+            begin
+                if B^[p.X-i, p.Y].kolor = MojKolor then begin
+                   if (B^[p.X-i, p.Y].rodzaj='wieza') or (B^[p.X-i, p.Y].rodzaj='hetman') then begin wynik:=true; Break; end;
+                   Break;
+            end;
+           end;
+         end;
+
+         //sprawdzamy w dol od pola
+            for i:=1 to 8 do
+            begin
+               if p.X+i>8 then Break;
+
+               if B^[p.X+i, p.Y]<> nil then
+               begin
+                   if B^[p.X+i, p.Y].kolor = MojKolor then begin
+                      if (B^[p.X+i, p.Y].rodzaj='wieza') or (B^[p.X+i, p.Y].rodzaj='hetman') then begin wynik:=true; Break; end;
+                      Break;
+               end;
+            end;
+            end;
+
+         //sprawdzamy na lewo w gore od pola
+            for i:=1 to 8 do
+            begin
+               if (p.X-i<1) or (p.Y-i<1) then Break;
+
+               if B^[p.X-i, p.Y-i]<> nil then
+               begin
+                   if B^[p.X-i, p.Y-i].kolor = MojKolor then begin
+                      if (B^[p.X-i, p.Y-i].rodzaj='goniec') or (B^[p.X-i, p.Y-i].rodzaj='hetman') then
+                      begin wynik:=true; Break; end;
+                      Break;
+               end;
+               end;
+            end;
+
+            //sprawdzamy na prawo w gore od pola
+               for i:=1 to 8 do
+               begin
+                  if (p.X-i<1) or (p.Y+i>8) then Break;
+
+                  if B^[p.X-i, p.Y+i]<> nil then
+                  begin
+                      if B^[p.X-i, p.Y+i].kolor = MojKolor then begin
+                         if (B^[p.X-i, p.Y+i].rodzaj='goniec') or (B^[p.X-i, p.Y+i].rodzaj='hetman') then begin wynik:=true; Break; end;
+                         Break;
+                  end;
+                  end;
+               end;
+
+               //sprawdzamy na prawo w dol od pola
+                  for i:=1 to 8 do
+                  begin
+                     if (p.X+i>8) or (p.Y+i>8) then Break;
+
+                     if B^[p.X+i, p.Y+i]<> nil then
+                     begin
+                         if B^[p.X+i, p.Y+i].kolor = MojKolor then begin
+                            if (B^[p.X+i, p.Y+i].rodzaj='goniec') or (B^[p.X+i, p.Y+i].rodzaj='hetman') then begin wynik:=true; Break; end;
+                            Break;
+                     end;
+                    end;
+                  end;
+
+                  //sprawdzamy na lewo w dol od pola
+
+                  for i:=1 to 8 do
+                  begin
+                     if (p.X+i>8) or (p.Y-i<1) then Break;
+
+                     if B^[p.X+i, p.Y-i]<> nil then
+                     begin
+                         if B^[p.X+i, p.Y-i].kolor = MojKolor then begin
+                            if (B^[p.X+i, p.Y-i].rodzaj='goniec') or (B^[p.X+i, p.Y-i].rodzaj='hetman') then begin wynik:=true; Break; end;
+                            Break;
+                         end;
+                  end;
+                      end;
+
+//sprawdzamy ataki pionow
+
+if MojKolor=GramKolorem then begin
+if (p.X-1>=1) and (p.Y-1>=1) then
+begin
+   if B^[p.X-1, p.Y-1]<>nil then begin
+     if B^[p.X-1, p.Y-1].kolor=MojKolor then
+     begin
+        if B^[p.x-1, p.Y-1].rodzaj='pion' then wynik:=true;
+     end;
+   end;
+end;
+
+if (p.X-1>=1) and (p.Y+1<=8) then
+begin
+   if B^[p.X-1, p.Y+1]<>nil then begin
+     if B^[p.X-1, p.Y+1].kolor=MojKolor then
+     begin
+        if B^[p.x-1, p.Y+1].rodzaj='pion' then wynik:=true;
+     end;
+   end;
+end;
+
+end
+else
+begin
+
+   if (p.X+1<=8) and (p.Y-1>=1) then
+   begin
+      if B^[p.X+1, p.Y-1]<>nil then begin
+        if B^[p.X+1, p.Y-1].kolor=MojKolor then
+        begin
+           if B^[p.x+1, p.Y-1].rodzaj='pion' then wynik:=true;
+        end;
+      end;
+   end;
+
+   if (p.X+1<=8) and (p.Y+1<=8) then
+   begin
+      if B^[p.X+1, p.Y+1]<>nil then begin
+        if B^[p.X+1, p.Y+1].kolor=MojKolor then
+        begin
+           if B^[p.x+1, p.Y+1].rodzaj='pion' then wynik:=true;
+        end;
+      end;
+   end;
+
+end;
+
+//jezeli nie sprawdzamy roszady to sprawdzamy tez ataki konia
+
+if rodzaj<>'roszada' then
+begin
+
+//sprawdzamy konie
+
+   if (p.X-2>=1) and (p.Y+1<=8) then begin
+if B^[p.X-2,p.Y+1]<>nil then
+begin
+    if B^[p.X-2,p.Y+1].kolor=MojKolor then
+    begin
+       if B^[p.X-2,p.Y+1].rodzaj='skoczek' then wynik:=true;
+    end;
+end;  end;
+
+    if (p.X-1>=1) and (p.Y+2<=8) then begin
+ if B^[p.X-1,p.Y+2]<>nil then
+ begin
+     if B^[p.X-1,p.Y+2].kolor=MojKolor then
+     begin
+        if B^[p.X-1,p.Y+2].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X+1<=8) and (p.Y+2<=8) then begin
+ if B^[p.X+1,p.Y+2]<>nil then
+ begin
+     if B^[p.X+1,p.Y+2].kolor=MojKolor then
+     begin
+        if B^[p.X+1,p.Y+2].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X+2<=8) and (p.Y+1<=8) then begin
+ if B^[p.X+2,p.Y+1]<>nil then
+ begin
+     if B^[p.X+2,p.Y+1].kolor=MojKolor then
+     begin
+        if B^[p.X+2,p.Y+1].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X+2<=8) and (p.Y-1>=1) then begin
+ if B^[p.X+2,p.Y-1]<>nil then
+ begin
+     if B^[p.X+2,p.Y-1].kolor=MojKolor then
+     begin
+        if B^[p.X+2,p.Y-1].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X+1<=8) and (p.Y-2>=1) then begin
+ if B^[p.X+1,p.Y-2]<>nil then
+ begin
+     if B^[p.X+1,p.Y-2].kolor=MojKolor then
+     begin
+        if B^[p.X+1,p.Y-2].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X-1>=1) and (p.Y-2>=1) then begin
+ if B^[p.X-1,p.Y-2]<>nil then
+ begin
+     if B^[p.X-1,p.Y-2].kolor=MojKolor then
+     begin
+        if B^[p.X-1,p.Y-2].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X-2>=1) and (p.Y-1>=1) then begin
+ if B^[p.X-2,p.Y-1]<>nil then
+ begin
+     if B^[p.X-2,p.Y-1].kolor=MojKolor then
+     begin
+        if B^[p.X-2,p.Y-1].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+
+end;
+
+//sprawdzamy czy broni krol
+
+if (p.X-1)>=1 then begin
+if (B^[p.x-1,p.y]<>nil) then begin
+if (B^[p.x-1,p.y].rodzaj='krol') and (B^[p.x-1,p.y].kolor=MojKolor) then
+wynik:=True;
+end;
+end;
+
+if (p.x+1<=8) then begin
+if (B^[p.x+1,p.y]<>nil) then begin
+if (B^[p.x+1,p.y].rodzaj='krol') and (B^[p.x+1,p.y].kolor=MojKolor) then
+wynik:=True;
+end;
+end;
+
+if (p.y-1)>=1 then begin
+if (B^[p.x,p.y-1]<>nil) then begin
+if (B^[p.x,p.y-1].rodzaj='krol') and (B^[p.x,p.y-1].kolor=MojKolor) then
+wynik:=True;
+end;
+end;
+
+if (p.y+1)<=8 then begin
+if (B^[p.x,p.y+1]<>nil) then begin
+if (B^[p.x,p.y+1].rodzaj='krol') and (B^[p.x,p.y+1].kolor=MojKolor) then
+wynik:=True;
+end;
+end;
+
+if (p.x-1>=1)and(p.y-1>=1) then begin
+if (B^[p.x-1,p.y-1]<>nil) then begin
+if (B^[p.x-1,p.y-1].rodzaj='krol') and (B^[p.x-1,p.y-1].kolor=MojKolor) then
+wynik:=True;
+end;
+end;
+
+if (p.x-1>=1)and(p.y+1<=8) then begin
+if (B^[p.x-1,p.y+1]<>nil) then begin
+if (B^[p.x-1,p.y+1].rodzaj='krol') and (B^[p.x-1,p.y+1].kolor=MojKolor) then
+wynik:=True;
+end;
+end;
+
+if (p.x+1<=8)and(p.y-1>=1) then begin
+if (B^[p.x+1,p.y-1]<>nil) then begin
+if (B^[p.x+1,p.y-1].rodzaj='krol') and (B^[p.x+1,p.y-1].kolor=MojKolor) then
+wynik:=True;
+end;
+end;
+
+if (p.x+1<=8)and(p.y+1<=8) then begin
+if (B^[p.x+1,p.y+1]<>nil) then begin
+if (B^[p.x+1,p.y+1].rodzaj='krol') and (B^[p.x+1,p.y+1].kolor=MojKolor) then
+wynik:=True;
+end;
+end;
+
+      Result:=wynik; //jezeli false to nie broni
+
+end;
+
+
+function TForm1.CzyCosAtakujePole(pozycja,rodzaj,MojKolor:string;szachownica:Pointer):boolean;
+var
+p:TPoint;
+i,j:integer;
+wynik:boolean;
+B:^TBoard;
+begin
+wynik:=false;
+p:=ZnajdzIJbyPole(pozycja);
+
+B:=szachownica;
+
+//sprawdzamy na lewo od pola
+   for i:=1 to 8 do
+   begin
+      if p.Y-i<1 then Break;
+
+      if B^[p.X, p.Y-i]<> nil then
+      begin
+          if B^[p.X, p.Y-i].kolor = MojKolor then begin Break; end else
+          begin
+             if (B^[p.X, p.Y-i].rodzaj='wieza') or (B^[p.X, p.Y-i].rodzaj='hetman') then begin wynik:=true; end;
+             Break;
+          end;
+      end;
+
+   end;
+
+   //sprawdzamy na prawo od pola
+      for i:=1 to 8 do
+      begin
+         if p.Y+i>8 then Break;
+
+         if B^[p.X, p.Y+i]<> nil then
+         begin
+             if B^[p.X, p.Y+i].kolor = MojKolor then begin Break; end else
+             begin
+                if (B^[p.X, p.Y+i].rodzaj='wieza') or (B^[p.X, p.Y+i].rodzaj='hetman') then begin wynik:=true; Break; end;
+                Break;
+             end;
+         end;
+
+      end;
+
+      //sprawdzamy w gore od pola
+         for i:=1 to 8 do
+         begin
+            if p.X-i<1 then Break;
+
+            if B^[p.X-i, p.Y]<> nil then
+            begin
+                if B^[p.X-i, p.Y].kolor = MojKolor then begin Break; end else
+                begin
+                   if (B^[p.X-i, p.Y].rodzaj='wieza') or (B^[p.X-i, p.Y].rodzaj='hetman') then begin wynik:=true; Break; end;
+                   Break;
+                end;
+            end;
+
+         end;
+
+         //sprawdzamy w dol od pola
+            for i:=1 to 8 do
+            begin
+               if p.X+i>8 then Break;
+
+               if B^[p.X+i, p.Y]<> nil then
+               begin
+                   if B^[p.X+i, p.Y].kolor = MojKolor then begin Break; end else
+                   begin
+                      if (B^[p.X+i, p.Y].rodzaj='wieza') or (B^[p.X+i, p.Y].rodzaj='hetman') then begin wynik:=true; Break; end;
+                      Break;
+                   end;
+               end;
+
+            end;
+
+         //sprawdzamy na lewo w gore od pola
+            for i:=1 to 8 do
+            begin
+               if (p.X-i<1) or (p.Y-i<1) then Break;
+
+               if B^[p.X-i, p.Y-i]<> nil then
+               begin
+                   if B^[p.X-i, p.Y-i].kolor = MojKolor then begin Break; end else
+                   begin
+                      if (B^[p.X-i, p.Y-i].rodzaj='goniec') or (B^[p.X-i, p.Y-i].rodzaj='hetman') then
+                      begin wynik:=true;
+                          Break;
+                      end;
+                      Break;
+                   end;
+               end;
+
+            end;
+
+            //sprawdzamy na prawo w gore od pola
+               for i:=1 to 8 do
+               begin
+                  if (p.X-i<1) or (p.Y+i>8) then Break;
+
+                  if B^[p.X-i, p.Y+i]<> nil then
+                  begin
+                      if B^[p.X-i, p.Y+i].kolor = MojKolor then begin Break; end else
+                      begin
+                         if (B^[p.X-i, p.Y+i].rodzaj='goniec') or (B^[p.X-i, p.Y+i].rodzaj='hetman') then begin wynik:=true; Break; end;
+                         Break;
+                      end;
+                  end;
+
+               end;
+
+               //sprawdzamy na prawo w dol od pola
+                  for i:=1 to 8 do
+                  begin
+                     if (p.X+i>8) or (p.Y+i>8) then Break;
+
+                     if B^[p.X+i, p.Y+i]<> nil then
+                     begin
+                         if B^[p.X+i, p.Y+i].kolor = MojKolor then begin Break; end else
+                         begin
+                            if (B^[p.X+i, p.Y+i].rodzaj='goniec') or (B^[p.X+i, p.Y+i].rodzaj='hetman') then
+                            begin
+                                wynik:=true;
+                                Break;
+                            end;
+                            Break;
+                         end;
+                     end;
+
+                  end;
+
+                  //sprawdzamy na lewo w dol od pola
+
+                  for i:=1 to 8 do
+                  begin
+                     if (p.X+i>8) or (p.Y-i<1) then Break;
+
+                     if B^[p.X+i, p.Y-i]<> nil then
+                     begin
+                         if B^[p.X+i, p.Y-i].kolor = MojKolor then begin Break; end else
+                         begin
+                            if (B^[p.X+i, p.Y-i].rodzaj='goniec') or (B^[p.X+i, p.Y-i].rodzaj='hetman') then begin wynik:=true; Break; end;
+                            Break;
+                         end;
+                     end;
+
+                  end;
+
+//sprawdzamy ataki pionow
+if MojKolor=GramKolorem then begin
+if (p.X-1>=1) and (p.Y-1>=1) then
+begin
+   if B^[p.X-1, p.Y-1]<>nil then begin
+     if B^[p.X-1, p.Y-1].kolor<>MojKolor then
+     begin
+        if B^[p.x-1, p.Y-1].rodzaj='pion' then wynik:=true;
+     end;
+   end;
+end;
+
+if (p.X-1>=1) and (p.Y+1<=8) then
+begin
+   if B^[p.X-1, p.Y+1]<>nil then begin
+     if B^[p.X-1, p.Y+1].kolor<>MojKolor then
+     begin
+        if B^[p.x-1, p.Y+1].rodzaj='pion' then wynik:=true;
+     end;
+   end;
+end;
+
+end
+else
+begin
+
+   if (p.X+1<=8) and (p.Y-1>=1) then
+begin
+   if B^[p.X+1, p.Y-1]<>nil then begin
+     if B^[p.X+1, p.Y-1].kolor<>MojKolor then
+     begin
+        if B^[p.x+1, p.Y-1].rodzaj='pion' then wynik:=true;
+     end;
+   end;
+end;
+
+if (p.X+1<=8) and (p.Y+1<=8) then
+begin
+   if B^[p.X+1, p.Y+1]<>nil then begin
+     if B^[p.X+1, p.Y+1].kolor<>MojKolor then
+     begin
+        if B^[p.x+1, p.Y+1].rodzaj='pion' then wynik:=true;
+     end;
+   end;
+end;
+
+end;
+
+//jezeli nie sprawdzamy roszady to sprawdzamy tez ataki konia
+
+if rodzaj<>'roszada' then
+begin
+
+//sprawdzamy konie
+
+   if (p.X-2>=1) and (p.Y+1<=8) then begin
+if B^[p.X-2,p.Y+1]<>nil then
+begin
+    if B^[p.X-2,p.Y+1].kolor<>MojKolor then
+    begin
+       if B^[p.X-2,p.Y+1].rodzaj='skoczek' then wynik:=true;
+    end;
+end;  end;
+
+    if (p.X-1>=1) and (p.Y+2<=8) then begin
+ if B^[p.X-1,p.Y+2]<>nil then
+ begin
+     if B^[p.X-1,p.Y+2].kolor<>MojKolor then
+     begin
+        if B^[p.X-1,p.Y+2].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X+1<=8) and (p.Y+2<=8) then begin
+ if B^[p.X+1,p.Y+2]<>nil then
+ begin
+     if B^[p.X+1,p.Y+2].kolor<>MojKolor then
+     begin
+        if B^[p.X+1,p.Y+2].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X+2<=8) and (p.Y+1<=8) then begin
+ if B^[p.X+2,p.Y+1]<>nil then
+ begin
+     if B^[p.X+2,p.Y+1].kolor<>MojKolor then
+     begin
+        if B^[p.X+2,p.Y+1].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X+2<=8) and (p.Y-1>=1) then begin
+ if B^[p.X+2,p.Y-1]<>nil then
+ begin
+     if B^[p.X+2,p.Y-1].kolor<>MojKolor then
+     begin
+        if B^[p.X+2,p.Y-1].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X+1<=8) and (p.Y-2>=1) then begin
+ if B^[p.X+1,p.Y-2]<>nil then
+ begin
+     if B^[p.X+1,p.Y-2].kolor<>MojKolor then
+     begin
+        if B^[p.X+1,p.Y-2].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X-1>=1) and (p.Y-2>=1) then begin
+ if B^[p.X-1,p.Y-2]<>nil then
+ begin
+     if B^[p.X-1,p.Y-2].kolor<>MojKolor then
+     begin
+        if B^[p.X-1,p.Y-2].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+    if (p.X-2>=1) and (p.Y-1>=1) then begin
+ if B^[p.X-2,p.Y-1]<>nil then
+ begin
+     if B^[p.X-2,p.Y-1].kolor<>MojKolor then
+     begin
+        if B^[p.X-2,p.Y-1].rodzaj='skoczek' then wynik:=true;
+     end;
+ end; end;
+
+
+end;
+
+//sprawdzamy czy broni atakuje
+
+if (p.x-1>=1) then begin
+if (B^[p.x-1,p.y]<>nil) then begin
+if (B^[p.x-1,p.y].rodzaj='krol') and (B^[p.x-1,p.y].kolor<>MojKolor) then
+wynik:=True;
+end;
+end;
+
+if (p.x+1<=8) then begin
+if (B^[p.x+1,p.y]<>nil) then begin
+if (B^[p.x+1,p.y].rodzaj='krol') and (B^[p.x+1,p.y].kolor<>MojKolor) then
+wynik:=True;
+end;
+end;
+
+if (p.y-1>=1) then begin
+if (B^[p.x,p.y-1]<>nil) then begin
+if (B^[p.x,p.y-1].rodzaj='krol') and (B^[p.x,p.y-1].kolor<>MojKolor) then
+wynik:=True;
+end;
+end;
+
+if (p.y+1<=8) then begin
+if (B^[p.x,p.y+1]<>nil) then begin
+if (B^[p.x,p.y+1].rodzaj='krol') and (B^[p.x,p.y+1].kolor<>MojKolor) then
+wynik:=True;
+end;
+end;
+
+if (p.x-1>=1)and(p.y-1>=1) then begin
+if (B^[p.x-1,p.y-1]<>nil) then begin
+if (B^[p.x-1,p.y-1].rodzaj='krol') and (B^[p.x-1,p.y-1].kolor<>MojKolor) then
+wynik:=True;
+end;
+end;
+
+if (p.x-1>=1) and (p.y+1<=8) then begin
+if (B^[p.x-1,p.y+1]<>nil) then begin
+if (B^[p.x-1,p.y+1].rodzaj='krol') and (B^[p.x-1,p.y+1].kolor<>MojKolor) then
+wynik:=True;
+end;
+end;
+
+if (p.x+1<=8) and (p.y-1>=1) then begin
+if (B^[p.x+1,p.y-1]<>nil) then begin
+if (B^[p.x+1,p.y-1].rodzaj='krol') and (B^[p.x+1,p.y-1].kolor<>MojKolor) then
+wynik:=True;
+end;
+end;
+
+if (p.x+1<=8)and(p.y+1<=8) then begin
+if (B^[p.x+1,p.y+1]<>nil) then begin
+if (B^[p.x+1,p.y+1].rodzaj='krol') and (B^[p.x+1,p.y+1].kolor<>MojKolor) then
+wynik:=True;
+end;
+end;
+
+      Result:=wynik; //jezeli false to nie atakuje
+
+
+end;
+
+function TForm1.KtoAtakujePole(p:TPoint; szachownica:Pointer):TTablicaPunktow;
+var
+i,j:integer;
+wynik:array of TPoint;
+B:^TBoard;
+MojKolor:string;
+begin
+
+B:=szachownica;
+MojKolor:=B^[p.X,p.Y].kolor;
+
+//sprawdzamy na lewo od pola
+   for i:=1 to 8 do
+   begin
+      if p.Y-i<1 then Break;
+
+      if B^[p.X, p.Y-i]<> nil then
+      begin
+          if B^[p.X, p.Y-i].kolor = MojKolor then begin Break; end else
+          begin
+             if (B^[p.X, p.Y-i].rodzaj='wieza') or (B^[p.X, p.Y-i].rodzaj='hetman') then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x,p.y-i);
+		end;
+             Break;
+          end;
+      end;
+
+   end;
+
+   //sprawdzamy na prawo od pola
+      for i:=1 to 8 do
+      begin
+         if p.Y+i>8 then Break;
+
+         if B^[p.X, p.Y+i]<> nil then
+         begin
+             if B^[p.X, p.Y+i].kolor = MojKolor then begin Break; end else
+             begin
+                if (B^[p.X, p.Y+i].rodzaj='wieza') or (B^[p.X, p.Y+i].rodzaj='hetman') then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x,p.y+i);
+		end;
+                Break;
+             end;
+         end;
+
+      end;
+
+      //sprawdzamy w gore od pola
+         for i:=1 to 8 do
+         begin
+            if p.X-i<1 then Break;
+
+            if B^[p.X-i, p.Y]<> nil then
+            begin
+                if B^[p.X-i, p.Y].kolor = MojKolor then begin Break; end else
+                begin
+                   if (B^[p.X-i, p.Y].rodzaj='wieza') or (B^[p.X-i, p.Y].rodzaj='hetman') then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x-i,p.y);
+		end;
+                   Break;
+                end;
+            end;
+
+         end;
+
+         //sprawdzamy w dol od pola
+            for i:=1 to 8 do
+            begin
+               if p.X+i>8 then Break;
+
+               if B^[p.X+i, p.Y]<> nil then
+               begin
+                   if B^[p.X+i, p.Y].kolor = MojKolor then begin Break; end else
+                   begin
+                      if (B^[p.X+i, p.Y].rodzaj='wieza') or (B^[p.X+i, p.Y].rodzaj='hetman') then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x+i,p.y);
+		end;
+                      Break;
+                   end;
+               end;
+
+            end;
+
+         //sprawdzamy na lewo w gore od pola
+            for i:=1 to 8 do
+            begin
+               if (p.X-i<1) or (p.Y-i<1) then Break;
+
+               if B^[p.X-i, p.Y-i]<> nil then
+               begin
+                   if B^[p.X-i, p.Y-i].kolor = MojKolor then begin Break; end else
+                   begin
+                      if (B^[p.X-i, p.Y-i].rodzaj='goniec') or (B^[p.X-i, p.Y-i].rodzaj='hetman') then
+                      begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x-i,p.y-i);
+		end;
+                      Break;
+                   end;
+               end;
+
+            end;
+
+            //sprawdzamy na prawo w gore od pola
+               for i:=1 to 8 do
+               begin
+                  if (p.X-i<1) or (p.Y+i>8) then Break;
+
+                  if B^[p.X-i, p.Y+i]<> nil then
+                  begin
+                      if B^[p.X-i, p.Y+i].kolor = MojKolor then begin Break; end else
+                      begin
+                         if (B^[p.X-i, p.Y+i].rodzaj='goniec') or (B^[p.X-i, p.Y+i].rodzaj='hetman') then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x-i,p.y+i);
+		end;
+                         Break;
+                      end;
+                  end;
+
+               end;
+
+               //sprawdzamy na prawo w dol od pola
+                  for i:=1 to 8 do
+                  begin
+                     if (p.X+i>8) or (p.Y+i>8) then Break;
+
+                     if B^[p.X+i, p.Y+i]<> nil then
+                     begin
+                         if B^[p.X+i, p.Y+i].kolor = MojKolor then begin Break; end else
+                         begin
+                            if (B^[p.X+i, p.Y+i].rodzaj='goniec') or (B^[p.X+i, p.Y+i].rodzaj='hetman') then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x+i,p.y+i);
+		end;
+                            Break;
+                         end;
+                     end;
+
+                  end;
+
+                  //sprawdzamy na lewo w dol od pola
+
+                  for i:=1 to 8 do
+                  begin
+                     if (p.X+i>8) or (p.Y-i<1) then Break;
+
+                     if B^[p.X+i, p.Y-i]<> nil then
+                     begin
+                         if B^[p.X+i, p.Y-i].kolor = MojKolor then begin Break; end else
+                         begin
+                            if (B^[p.X+i, p.Y-i].rodzaj='goniec') or (B^[p.X+i, p.Y-i].rodzaj='hetman') then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x+i,p.y-i);
+		end;
+                            Break;
+                         end;
+                     end;
+
+                  end;
+
+//sprawdzamy piony
+
+if MojKolor=GramKolorem then begin
+if (p.X-1>=1) and (p.y-1>=1) then begin
+    if B^[p.X-1,p.Y-1]<>nil then
+    begin
+        if (B^[p.X-1,p.Y-1].rodzaj='pion') and (B^[p.X-1,p.Y-1].kolor<>MojKolor) then
+        begin
+	SetLength(wynik, Length(wynik)+1);
+	wynik[High(wynik)]:=Point(p.x-1,p.y-1);
+        end;
+    end;
+end;
+
+if (p.X-1>=1) and (p.y+1<=8) then begin
+    if B^[p.X-1,p.Y+1]<>nil then
+    begin
+        if (B^[p.X-1,p.Y+1].rodzaj='pion') and (B^[p.X-1,p.Y+1].kolor<>MojKolor) then
+        begin
+	SetLength(wynik, Length(wynik)+1);
+	wynik[High(wynik)]:=Point(p.x-1,p.y+1);
+        end;
+    end;
+end;
+
+end
+else
+begin
+
+   if (p.X+1<=8) and (p.y-1>=1) then begin
+    if B^[p.X+1,p.Y-1]<>nil then
+    begin
+        if (B^[p.X+1,p.Y-1].rodzaj='pion') and (B^[p.X+1,p.Y-1].kolor<>MojKolor) then
+        begin
+	SetLength(wynik, Length(wynik)+1);
+	wynik[High(wynik)]:=Point(p.x+1,p.y-1);
+        end;
+    end;
+end;
+
+if (p.X+1<=8) and (p.y+1<=8) then begin
+    if B^[p.X+1,p.Y+1]<>nil then
+    begin
+        if (B^[p.X+1,p.Y+1].rodzaj='pion') and (B^[p.X+1,p.Y+1].kolor<>MojKolor) then
+        begin
+	SetLength(wynik, Length(wynik)+1);
+	wynik[High(wynik)]:=Point(p.x+1,p.y+1);
+        end;
+    end;
+end;
+
+end;
+
+
+
+//sprawdzamy konie
+
+   if (p.X-2>=1) and (p.Y+1<=8) then begin
+if B^[p.X-2,p.Y+1]<>nil then
+begin
+    if B^[p.X-2,p.Y+1].kolor<>MojKolor then
+    begin
+       if B^[p.X-2,p.Y+1].rodzaj='skoczek' then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x-2,p.y+1);
+		end;
+    end;
+end;  end;
+
+    if (p.X-1>=1) and (p.Y+2<=8) then begin
+ if B^[p.X-1,p.Y+2]<>nil then
+ begin
+     if B^[p.X-1,p.Y+2].kolor<>MojKolor then
+     begin
+        if B^[p.X-1,p.Y+2].rodzaj='skoczek' then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x-1,p.y+2);
+		end;
+     end;
+ end; end;
+
+    if (p.X+1<=8) and (p.Y+2<=8) then begin
+ if B^[p.X+1,p.Y+2]<>nil then
+ begin
+     if B^[p.X+1,p.Y+2].kolor<>MojKolor then
+     begin
+        if B^[p.X+1,p.Y+2].rodzaj='skoczek' then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x+1,p.y+2);
+		end;
+     end;
+ end; end;
+
+    if (p.X+2<=8) and (p.Y+1<=8) then begin
+ if B^[p.X+2,p.Y+1]<>nil then
+ begin
+     if B^[p.X+2,p.Y+1].kolor<>MojKolor then
+     begin
+        if B^[p.X+2,p.Y+1].rodzaj='skoczek' then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x+2,p.y+1);
+		end;
+     end;
+ end; end;
+
+    if (p.X+2<=8) and (p.Y-1>=1) then begin
+ if B^[p.X+2,p.Y-1]<>nil then
+ begin
+     if B^[p.X+2,p.Y-1].kolor<>MojKolor then
+     begin
+        if B^[p.X+2,p.Y-1].rodzaj='skoczek' then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x+2,p.y-1);
+		end;
+     end;
+ end; end;
+
+    if (p.X+1<=8) and (p.Y-2>=1) then begin
+ if B^[p.X+1,p.Y-2]<>nil then
+ begin
+     if B^[p.X+1,p.Y-2].kolor<>MojKolor then
+     begin
+        if B^[p.X+1,p.Y-2].rodzaj='skoczek' then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x+1,p.y-2);
+		end;
+     end;
+ end; end;
+
+    if (p.X-1>=1) and (p.Y-2>=1) then begin
+ if B^[p.X-1,p.Y-2]<>nil then
+ begin
+     if B^[p.X-1,p.Y-2].kolor<>MojKolor then
+     begin
+        if B^[p.X-1,p.Y-2].rodzaj='skoczek' then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x-1,p.y-2);
+		end;
+     end;
+ end; end;
+
+    if (p.X-2>=1) and (p.Y-1>=1) then begin
+ if B^[p.X-2,p.Y-1]<>nil then
+ begin
+     if B^[p.X-2,p.Y-1].kolor<>MojKolor then
+     begin
+        if B^[p.X-2,p.Y-1].rodzaj='skoczek' then begin
+		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x-2,p.y-1);
+		end;
+     end;
+ end; end;
+
+
+    //sprawdzamy czy broni atakuje
+    if (p.x-1>=1) then begin
+    if (B^[p.x-1,p.y]<>nil) then begin
+    if (B^[p.x-1,p.y].rodzaj='krol') and (B^[p.x-1,p.y].kolor<>MojKolor) then
+begin
+    		SetLength(wynik, Length(wynik)+1);
+		wynik[High(wynik)]:=Point(p.x-1,p.y);
+end;
+end;
+end;
+
+    if (p.x+1<=8) then begin
+    if (B^[p.x+1,p.y]<>nil) then begin
+    if (B^[p.x+1,p.y].rodzaj='krol') and (B^[p.x+1,p.y].kolor<>MojKolor) then
+    begin
+        		SetLength(wynik, Length(wynik)+1);
+    		wynik[High(wynik)]:=Point(p.x+1,p.y);
+    end;
+    end;
+    end;
+
+    if (p.y-1>=1) then begin
+    if (B^[p.x,p.y-1]<>nil) then begin
+    if (B^[p.x,p.y-1].rodzaj='krol') and (B^[p.x,p.y-1].kolor<>MojKolor) then
+    begin
+        		SetLength(wynik, Length(wynik)+1);
+    		wynik[High(wynik)]:=Point(p.x,p.y-1);
+    end;
+    end;
+    end;
+
+    if (p.y+1<=8) then begin
+    if (B^[p.x,p.y+1]<>nil) then begin
+    if (B^[p.x,p.y+1].rodzaj='krol') and (B^[p.x,p.y+1].kolor<>MojKolor) then
+    begin
+        		SetLength(wynik, Length(wynik)+1);
+    		wynik[High(wynik)]:=Point(p.x,p.y+1);
+    end;
+    end;
+    end;
+
+    if (p.x-1>=1) and (p.y-1>=1) then begin
+    if (B^[p.x-1,p.y-1]<>nil) then begin
+    if (B^[p.x-1,p.y-1].rodzaj='krol') and (B^[p.x-1,p.y-1].kolor<>MojKolor) then
+    begin
+        		SetLength(wynik, Length(wynik)+1);
+    		wynik[High(wynik)]:=Point(p.x-1,p.y-1);
+    end;
+    end;
+    end;
+
+    if (p.x-1>=1) and (p.y+1<=8) then begin
+    if (B^[p.x-1,p.y+1]<>nil) then begin
+    if (B^[p.x-1,p.y+1].rodzaj='krol') and (B^[p.x-1,p.y+1].kolor<>MojKolor) then
+    begin
+        		SetLength(wynik, Length(wynik)+1);
+    		wynik[High(wynik)]:=Point(p.x-1,p.y+1);
+    end;
+    end;
+    end;
+
+    if (p.x+1<=8) and (p.y-1>=1) then begin
+    if (B^[p.x+1,p.y-1]<>nil) then begin
+    if (B^[p.x+1,p.y-1].rodzaj='krol') and (B^[p.x+1,p.y-1].kolor<>MojKolor) then
+    begin
+        		SetLength(wynik, Length(wynik)+1);
+    		wynik[High(wynik)]:=Point(p.x+1,p.y-1);
+    end;
+    end;
+    end;
+
+    if (p.x+1<=8) and (p.y+1<=8) then begin
+    if (B^[p.x+1,p.y+1]<>nil) then begin
+    if (B^[p.x+1,p.y+1].rodzaj='krol') and (B^[p.x+1,p.y+1].kolor<>MojKolor) then
+    begin
+        		SetLength(wynik, Length(wynik)+1);
+    		wynik[High(wynik)]:=Point(p.x+1,p.y+1);
+    end;
+    end;
+    end;
+
+
+      Result:=wynik;
+
+
+end;
+
+function TForm1.CzySieRuszal(polozenie:TPoint):boolean;
+var
+RuszalSie:boolean;
+rodzaj,kolor:string;
+i:integer;
+begin
+rodzaj:=Board[polozenie.X,polozenie.Y].rodzaj;
+kolor:=Board[polozenie.X,polozenie.Y].kolor;
+
+RuszalSie:=false;
+for i:=0 to Length(PrzebiegPartii)-1 do
+begin
+   if (PrzebiegPartii[i].figura=rodzaj) and (PrzebiegPartii[i].kolor=kolor) then begin RuszalSie:=true; Break; end;
+end;
+
+Result:=RuszalSie;  //jak false to sie nie ruszal
+
+end;
+
+function TForm1.SprawdzKrola(pole:TPoint; na:string):boolean; //true - nie atakowany, false - atakowany
+var
+tmpBoard : array[1..8,1..8] of TBierka;
+tmp:TBierka;
+punkt:TPoint;
+i,j:integer;
+PozycjaKrola:TPoint;
+WszystkoOK:boolean;
+figura:string;
+begin
+tmpBoard:=Board;
+
+tmp:=tmpBoard[pole.X,pole.Y];
+tmpBoard[pole.X,pole.Y]:=nil;
+punkt:=znajdzIJbyPole(na);
+tmpBoard[punkt.X,punkt.Y]:=tmp;
+
+for i:=1 to 8 do
+for j:=1 to 8 do
+  if TmpBoard[i,j]<>nil then begin if (tmpBoard[i,j].rodzaj='krol') and (tmpBoard[i,j].kolor=GramKolorem) then PozycjaKrola:=Point(i,j); end;
+
+WszystkoOK:=CzyCosAtakujePole(DaneBoard[PozycjaKrola.X, PozycjaKrola.Y].pole, 'ruch', GramKolorem, @tmpBoard);
+
+if WszystkoOK=false then
+begin Result:=true end else
+begin
+Result:=false;
+end;
+
+
+end;
+
+function TForm1.CzyKrolMaGdzieUciec(K:TPoint):boolean;
+var
+ma:boolean;
+MojKolor,KolorPrzeciwnika:string;
+begin
+ma:=false;
+
+MojKolor:=Board[K.X,K.Y].kolor;
+
+if MojKolor='biale' then begin KolorPrzeciwnika:='czarne'; end else begin KolorPrzeciwnika:='biale'; end;
+
+if K.x-1>=1 then begin  //do gory
+   if Board[K.X-1, K.Y]=nil then
+   begin
+      if CzyCosAtakujePole(DaneBoard[K.X-1,K.Y].pole, 'ruch', MojKolor, @Board)=false then ma:=True;
+   end
+   else
+   begin
+      if (MojKolor<>Board[K.X-1,K.Y].kolor) then
+         begin
+             if CzyCosBroniPole(DaneBoard[K.X-1,K.Y].pole, 'ruch', KolorPrzeciwnika, @Board)=false then ma:=True;
+         end;
+   end;
+end;
+
+if (K.x-1>=1) and (K.y+1<=8) then begin  //do gory w prawo
+   if Board[K.X+1, K.Y+1]=nil then
+   begin
+      if CzyCosAtakujePole(DaneBoard[K.X-1,K.Y+1].pole, 'ruch',MojKolor, @Board)=false then ma:=True;
+   end
+      else
+   begin
+      if (MojKolor<>Board[K.X-1,K.Y+1].kolor) then
+         begin
+             if CzyCosBroniPole(DaneBoard[K.X-1,K.Y+1].pole, 'ruch', KolorPrzeciwnika, @Board)=false then ma:=True;
+         end;
+   end;
+end;
+
+if (K.x-1>=1) and (K.y-1>=1) then begin  //do gory w lewo
+   if Board[K.X-1, K.Y-1]=nil then
+   begin
+      if CzyCosAtakujePole(DaneBoard[K.X-1,K.Y-1].pole, 'ruch', MojKolor, @Board)=false then ma:=True;
+   end
+      else
+   begin
+      if (MojKolor<>Board[K.X-1,K.Y-1].kolor) then
+         begin
+             if CzyCosBroniPole(DaneBoard[K.X-1,K.Y-1].pole, 'ruch', KolorPrzeciwnika, @Board)=false then ma:=True;
+         end;
+   end;
+end;
+
+if K.y-1>=1 then begin  //w lewo
+   if Board[K.X, K.Y-1]=nil then
+   begin
+      if CzyCosAtakujePole(DaneBoard[K.X,K.Y-1].pole, 'ruch', MojKolor, @Board)=false then ma:=True;
+   end
+      else
+   begin
+      if (MojKolor<>Board[K.X,K.Y-1].kolor) then
+         begin
+             if CzyCosBroniPole(DaneBoard[K.X,K.Y-1].pole, 'ruch', KolorPrzeciwnika, @Board)=false then ma:=True;
+         end;
+   end;
+end;
+
+if (K.x+1<=8) and (K.y-1>=1) then begin  //w lewo w dol
+   if Board[K.X+1, K.Y-1]=nil then
+   begin
+      if CzyCosAtakujePole(DaneBoard[K.X+1,K.Y-1].pole, 'ruch', MojKolor, @Board)=false then ma:=True;
+   end
+      else
+   begin
+      if (MojKolor<>Board[K.X+1,K.Y-1].kolor) then
+         begin
+             if CzyCosBroniPole(DaneBoard[K.X+1,K.Y-1].pole, 'ruch', KolorPrzeciwnika, @Board)=false then ma:=True;
+         end;
+   end;
+end;
+
+if K.x+1<=8 then begin  //w dol
+   if Board[K.X+1, K.Y]=nil then
+   begin
+      if CzyCosAtakujePole(DaneBoard[K.X+1,K.Y].pole, 'ruch', MojKolor, @Board)=false then ma:=True;
+   end
+      else
+   begin
+      if (MojKolor<>Board[K.X+1,K.Y].kolor) then
+         begin
+             if CzyCosBroniPole(DaneBoard[K.X+1,K.Y].pole, 'ruch', KolorPrzeciwnika, @Board)=false then ma:=True;
+         end;
+   end;
+end;
+
+if K.y+1<=8 then begin  //w prawo
+   if Board[K.X, K.Y+1]=nil then
+   begin
+      if CzyCosAtakujePole(DaneBoard[K.X,K.Y+1].pole, 'ruch', MojKolor, @Board)=false then ma:=True;
+   end
+      else
+   begin
+      if (MojKolor<>Board[K.X,K.Y+1].kolor) then
+         begin
+             if CzyCosBroniPole(DaneBoard[K.X,K.Y+1].pole, 'ruch', KolorPrzeciwnika, @Board)=false then ma:=True;
+         end;
+   end;
+end;
+
+if (K.x+1<=8) and (K.y+1<=8) then begin  //w prawo w dol
+   if Board[K.X+1, K.Y+1]=nil then
+   begin
+      if CzyCosAtakujePole(DaneBoard[K.X+1,K.Y+1].pole, 'ruch', MojKolor, @Board)=false then
+      ma:=True;
+   end
+      else
+   begin
+      if (MojKolor<>Board[K.X+1,K.Y+1].kolor) then
+         begin
+             if CzyCosBroniPole(DaneBoard[K.X+1,K.Y+1].pole, 'ruch', KolorPrzeciwnika, @Board)=false then
+             ma:=True;
+         end;
+   end;
+end;
+
+Result:=ma;
+
+end;
+
+
+function TForm1.CzyCosStanieNaPolu(pozycja,MojKolor:string;szachownica:Pointer):boolean;   //podrzedne
+var
+p,PozycjaKrola:TPoint;
+i,j:integer;
+wynik:boolean;
+B:^TBoard;
+tmpBoard:TBoard;
+tmpBierka:TBierka;
+begin
+wynik:=false;
+p:=ZnajdzIJbyPole(pozycja);
+
+B:=szachownica;
+
+//szukamy pozycji krola na szachownicy
+for i:=1 to 8 do
+for j:=1 to 8 do
+  if B^[i,j]<>nil then begin if (B^[i,j].rodzaj='krol') and (B^[i,j].kolor=MojKolor) then PozycjaKrola:=Point(i,j); end;
+
+//sprawdzamy na lewo od pola
+   for i:=1 to 8 do
+   begin
+      if p.Y-i<1 then Break;
+
+      if B^[p.X, p.Y-i]<> nil then
+      begin
+          if B^[p.X, p.Y-i].kolor = MojKolor then begin
+             if (B^[p.X, p.Y-i].rodzaj='wieza') or (B^[p.X, p.Y-i].rodzaj='hetman') then
+             begin
+                  tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X, p.Y-i];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X, p.Y-i]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+             end;
+             Break;
+      end;
+     end;
+   end;
+
+   //sprawdzamy na prawo od pola
+      for i:=1 to 8 do
+      begin
+         if p.Y+i>8 then Break;
+
+         if B^[p.X, p.Y+i]<> nil then
+         begin
+             if B^[p.X, p.Y+i].kolor = MojKolor then begin
+                if (B^[p.X, p.Y+i].rodzaj='wieza') or (B^[p.X, p.Y+i].rodzaj='hetman') then
+                             begin
+                  tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X, p.Y+i];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X, p.Y+i]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+             end;
+                Break;
+         end;
+       end;
+      end;
+
+      //sprawdzamy w gore od pola
+         for i:=1 to 8 do
+         begin
+            if p.X-i<1 then Break;
+
+            if B^[p.X-i, p.Y]<> nil then
+            begin
+                if B^[p.X-i, p.Y].kolor = MojKolor then begin
+                   if (B^[p.X-i, p.Y].rodzaj='wieza') or (B^[p.X-i, p.Y].rodzaj='hetman') then
+                                begin
+                  tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X-i, p.Y];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X-i, p.Y]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+             end;
+                   Break;
+            end;
+           end;
+         end;
+
+         //sprawdzamy w dol od pola
+            for i:=1 to 8 do
+            begin
+               if p.X+i>8 then Break;
+
+               if B^[p.X+i, p.Y]<> nil then
+               begin
+                   if B^[p.X+i, p.Y].kolor = MojKolor then begin
+                      if (B^[p.X+i, p.Y].rodzaj='wieza') or (B^[p.X+i, p.Y].rodzaj='hetman') then
+                                   begin
+                  tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X+i, p.Y];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X+i, p.Y]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+             end;
+                      Break;
+               end;
+            end;
+            end;
+
+         //sprawdzamy na lewo w gore od pola
+            for i:=1 to 8 do
+            begin
+               if (p.X-i<1) or (p.Y-i<1) then Break;
+
+               if B^[p.X-i, p.Y-i]<> nil then
+               begin
+                   if B^[p.X-i, p.Y-i].kolor = MojKolor then begin
+                      if (B^[p.X-i, p.Y-i].rodzaj='goniec') or (B^[p.X-i, p.Y-i].rodzaj='hetman') then
+                      begin
+                                        tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X-i, p.Y-i];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X-i, p.Y-i]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+                      end;
+                      Break;
+               end;
+               end;
+            end;
+
+            //sprawdzamy na prawo w gore od pola
+               for i:=1 to 8 do
+               begin
+                  if (p.X-i<1) or (p.Y+i>8) then Break;
+
+                  if B^[p.X-i, p.Y+i]<> nil then
+                  begin
+                      if B^[p.X-i, p.Y+i].kolor = MojKolor then begin
+                         if (B^[p.X-i, p.Y+i].rodzaj='goniec') or (B^[p.X-i, p.Y+i].rodzaj='hetman') then
+                         begin
+                                           tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X-i, p.Y+i];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X-i, p.Y+i]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+                         end;
+                         Break;
+                  end;
+                  end;
+               end;
+
+               //sprawdzamy na prawo w dol od pola
+                  for i:=1 to 8 do
+                  begin
+                     if (p.X+i>8) or (p.Y+i>8) then Break;
+
+                     if B^[p.X+i, p.Y+i]<> nil then
+                     begin
+                         if B^[p.X+i, p.Y+i].kolor = MojKolor then begin
+                            if (B^[p.X+i, p.Y+i].rodzaj='goniec') or (B^[p.X+i, p.Y+i].rodzaj='hetman') then
+                            begin
+                                              tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X+i, p.Y+i];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X+i, p.Y+i]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+                            end;
+                            Break;
+                     end;
+                    end;
+                  end;
+
+                  //sprawdzamy na lewo w dol od pola
+
+                  for i:=1 to 8 do
+                  begin
+                     if (p.X+i>8) or (p.Y-i<1) then Break;
+
+                     if B^[p.X+i, p.Y-i]<> nil then
+                     begin
+                         if B^[p.X+i, p.Y-i].kolor = MojKolor then begin
+                            if (B^[p.X+i, p.Y-i].rodzaj='goniec') or (B^[p.X+i, p.Y-i].rodzaj='hetman') then
+                            begin
+                                              tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X+i, p.Y-i];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X+i, p.Y-i]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+                            end;
+                            Break;
+                         end;
+                  end;
+                      end;
+
+//sprawdzamy ataki pionow
+
+
+if (p.X+1<=8) then
+begin
+   if B^[p.X-1, p.Y]<>nil then begin
+     if B^[p.X-1, p.Y].kolor=MojKolor then
+     begin
+        if B^[p.x-1, p.Y].rodzaj='pion' then begin
+                          tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X-1, p.Y];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X-1, p.Y]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+        end;
+     end;
+   end;
+end;
+
+
+//sprawdzamy konie
+
+   if (p.X-2>=1) and (p.Y+1<=8) then begin
+if B^[p.X-2,p.Y+1]<>nil then
+begin
+    if B^[p.X-2,p.Y+1].kolor=MojKolor then
+    begin
+       if B^[p.X-2,p.Y+1].rodzaj='skoczek' then begin
+                         tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X-2, p.Y+1];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X-2, p.Y+1]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+       end;
+    end;
+end;  end;
+
+    if (p.X-1>=1) and (p.Y+2<=8) then begin
+ if B^[p.X-1,p.Y+2]<>nil then
+ begin
+     if B^[p.X-1,p.Y+2].kolor=MojKolor then
+     begin
+        if B^[p.X-1,p.Y+2].rodzaj='skoczek' then begin
+                          tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X-1, p.Y+2];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X-1, p.Y+2]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+        end;
+     end;
+ end; end;
+
+    if (p.X+1<=8) and (p.Y+2<=8) then begin
+ if B^[p.X+1,p.Y+2]<>nil then
+ begin
+     if B^[p.X+1,p.Y+2].kolor=MojKolor then
+     begin
+        if B^[p.X+1,p.Y+2].rodzaj='skoczek' then begin
+                          tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X+1, p.Y+2];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X+1, p.Y+2]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+        end;
+     end;
+ end; end;
+
+    if (p.X+2<=8) and (p.Y+1<=8) then begin
+ if B^[p.X+2,p.Y+1]<>nil then
+ begin
+     if B^[p.X+2,p.Y+1].kolor=MojKolor then
+     begin
+        if B^[p.X+2,p.Y+1].rodzaj='skoczek' then begin
+                          tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X+2, p.Y+1];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X+2, p.Y+1]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+        end;
+     end;
+ end; end;
+
+    if (p.X+2<=8) and (p.Y-1>=1) then begin
+ if B^[p.X+2,p.Y-1]<>nil then
+ begin
+     if B^[p.X+2,p.Y-1].kolor=MojKolor then
+     begin
+        if B^[p.X+2,p.Y-1].rodzaj='skoczek' then begin
+                          tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X+2, p.Y-1];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X+2, p.Y-1]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+        end;
+     end;
+ end; end;
+
+    if (p.X+1<=8) and (p.Y-2>=1) then begin
+ if B^[p.X+1,p.Y-2]<>nil then
+ begin
+     if B^[p.X+1,p.Y-2].kolor=MojKolor then
+     begin
+        if B^[p.X+1,p.Y-2].rodzaj='skoczek' then begin
+                          tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X+1, p.Y-2];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X+1, p.Y-2]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+        end;
+     end;
+ end; end;
+
+    if (p.X-1>=1) and (p.Y-2>=1) then begin
+ if B^[p.X-1,p.Y-2]<>nil then
+ begin
+     if B^[p.X-1,p.Y-2].kolor=MojKolor then
+     begin
+        if B^[p.X-1,p.Y-2].rodzaj='skoczek' then begin
+                          tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X-1, p.Y-2];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X-1, p.Y-2]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+        end;
+     end;
+ end; end;
+
+    if (p.X-2>=1) and (p.Y-1>=1) then begin
+ if B^[p.X-2,p.Y-1]<>nil then
+ begin
+     if B^[p.X-2,p.Y-1].kolor=MojKolor then
+     begin
+        if B^[p.X-2,p.Y-1].rodzaj='skoczek' then begin
+                          tmpBoard:=B^;
+                  tmpBierka:=tmpBoard[p.X-2, p.Y-1];
+                  tmpBoard[p.X,p.Y]:=tmpBierka;
+                  tmpBoard[p.X-2, p.Y-1]:=nil; //sprawdzamy czy po zaslonieciu krola nie odslaniamy innego ataku
+                      if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch',MojKolor,@tmpBoard)=false then
+                      Exit (True);
+        end;
+     end;
+ end; end;
+
+
+
+      Result:=wynik; //jezeli false to nie stanie nic
+
+end;
+
+function TForm1.CzyMoznaZaslonic(atakowany,atakujacy:TPoint):boolean;  //nadrzedne
+var
+i,j:integer;
+CzyMozna,tmp:boolean;
+a,b:TPoint;
+begin
+CzyMozna:=false;
+
+if (atakowany.X-atakujacy.X<0) and (atakowany.Y-atakujacy.Y<0) then //atak po skosie z dolu z prawej
+begin
+  //  tmp:=false;
+    for i:=1 to atakujacy.X-atakowany.X do
+    begin
+         if (atakowany.X+i=atakujacy.X) then Break;
+         if (CzyCosStanieNaPolu(DaneBoard[atakowany.X+i,atakowany.Y+i].pole, Board[atakowany.X,atakowany.Y].kolor,@Board)=true) then
+         Exit (true);
+    end;
+ //   if tmp=false then Exit (false);
+end;
+
+if (atakowany.X-atakujacy.X<0) and (atakowany.Y-atakujacy.Y>0) then //atak po skosie z dolu z lewej
+begin
+  //  tmp:=false;
+    for i:=1 to atakujacy.X-atakowany.X do
+    begin
+         if (atakowany.X+i=atakujacy.X) then Break;
+         if (CzyCosStanieNaPolu(DaneBoard[atakowany.X+i,atakowany.Y-i].pole, Board[atakowany.X,atakowany.Y].kolor,@Board)=true) then
+         Exit (true);
+    end;
+ //   if tmp=false then Exit (false);
+end;
+
+if (atakowany.X-atakujacy.X>0) and (atakowany.Y-atakujacy.Y>0) then //atak po skosie z gory z lewej
+begin
+ //   tmp:=false;
+    for i:=1 to atakowany.X-atakujacy.X do
+    begin
+         if (atakujacy.X+i=atakowany.X) then Break;
+         if (CzyCosStanieNaPolu(DaneBoard[atakowany.X-i,atakowany.Y-i].pole, Board[atakowany.X,atakowany.Y].kolor,@Board)=true) then
+         Exit (true);
+    end;
+ //   if tmp=false then Exit (false);
+end;
+
+if (atakowany.X-atakujacy.X>0) and (atakowany.Y-atakujacy.Y<0) then //atak po skosie z gory z prawej
+begin
+ //   tmp:=false;
+    for i:=1 to atakowany.X-atakujacy.X do
+    begin
+         if (atakujacy.X+i=atakowany.X) then Break;
+         if (CzyCosStanieNaPolu(DaneBoard[atakowany.X-i,atakowany.Y+i].pole, Board[atakowany.X,atakowany.Y].kolor,@Board)=true) then
+         Exit (true);
+    end;
+ //   if tmp=false then Exit (false);
+end;
+
+if (atakowany.X-atakujacy.X>0) and (atakowany.Y-atakujacy.Y=0) then //atak z gory
+begin
+ //   tmp:=false;
+    for i:=1 to atakowany.X-atakujacy.X do
+    begin
+         if (atakujacy.X+i=atakowany.X) then Break;
+         if (CzyCosStanieNaPolu(DaneBoard[atakowany.X-i,atakowany.Y].pole, Board[atakowany.X,atakowany.Y].kolor,@Board)=true) then
+         Exit (true);
+    end;
+ //   if tmp=false then Exit (false);
+end;
+
+if (atakowany.X-atakujacy.X<0) and (atakowany.Y-atakujacy.Y=0) then //atak z dolu
+begin
+ //   tmp:=false;
+    for i:=1 to atakujacy.X-atakowany.X do
+    begin
+         if (atakowany.X+i=atakujacy.X) then Break;
+         if (CzyCosStanieNaPolu(DaneBoard[atakowany.X+i,atakowany.Y].pole, Board[atakowany.X,atakowany.Y].kolor,@Board)=true) then
+         Exit (true);
+    end;
+ //   if tmp=false then Exit (false);
+end;
+
+if (atakowany.X-atakujacy.X=0) and (atakowany.Y-atakujacy.Y>0) then //atak z lewej
+begin
+  //  tmp:=false;
+   j:=atakowany.Y-atakujacy.Y;
+
+    for i:=1 to j do
+    begin
+         if (atakujacy.Y+i=atakowany.Y) then Break;
+         if (CzyCosStanieNaPolu(DaneBoard[atakowany.X,atakowany.Y-i].pole, Board[atakowany.X,atakowany.Y].kolor,@Board)=true) then
+         Exit (true);
+    end;
+ //   if tmp=false then Exit (false);
+end;
+
+if (atakowany.X-atakujacy.X=0) and (atakowany.Y-atakujacy.Y<0) then //atak z prawej
+begin
+ //   tmp:=false;
+    for i:=1 to atakujacy.Y-atakowany.Y do
+    begin
+         if (atakowany.Y+i=atakujacy.Y) then Break;
+         if (CzyCosStanieNaPolu(DaneBoard[atakowany.X,atakowany.Y+i].pole, Board[atakowany.X,atakowany.Y].kolor,@Board)=true) then
+         Exit (true);
+    end;
+ //   if tmp=false then Exit (false);
+end;
+
+
+
+    Result:=CzyMozna;
+end;
+
+function TForm1.CzyMat(kolor:string):boolean;
+var
+PozycjaKrola:TPoint;
+i,j:integer;
+atakujacy:TTablicaPunktow;
+KolorPrzeciwnika:string;
+nie:boolean;
+begin
+nie:=false;
+
+for i:=1 to 8 do
+for j:=1 to 8 do
+  if Board[i,j]<>nil then begin if (Board[i,j].rodzaj='krol') and (Board[i,j].kolor=kolor) then PozycjaKrola:=Point(i,j); end;
+
+if CzyCosAtakujePole(DaneBoard[PozycjaKrola.X,PozycjaKrola.Y].pole,'ruch', kolor, @Board)=true then   //Po wykonanym ruchu sprawdzamy czy cos atakuje wskazanego krola
+begin
+
+   //sprawdzamy najpierw najblizsze pola krola czy moze uciec albo zabic
+        if CzyKrolMaGdzieUciec(PozycjaKrola)=true then
+        begin
+        Exit (False);
+        end
+        else
+        begin
+
+     //jezeli krol  moze uciec lub zabic z bliska sprawdzamy liste atakujacych
+            atakujacy:=KtoAtakujePole(PozycjaKrola, @Board);
+
+            if Length(atakujacy)=0 then Exit; //brak atakujacych przeciwnikow
+
+            for i:=0 to Length(atakujacy)-1 do
+            begin
+                 //najpierw sprawdzimy czy mozna zabic bierke
+
+                if kolor='biale' then begin KolorPrzeciwnika:='czarne'; end else begin KolorPrzeciwnika:='biale'; end;
+
+                if CzyCosAtakujePole(DaneBoard[atakujacy[i].x,atakujacy[i].y].pole, 'ruch', KolorPrzeciwnika, @Board) = true then //jezeli nie mozna zabic bierki sprawdzamy czy mozna zaslonic pola
+                begin
+                Exit (False);
+                end
+                else
+                begin
+
+
+                      if CzyMoznaZaslonic(PozycjaKrola, atakujacy[i])=true then
+                      begin
+                      Exit (False);
+                      end
+                      else
+                      begin
+                      Exit (True);
+                      end;
+                 end;
+            end;
+        end;
+        end;
+
+Result:=nie;
+end;
+
+function TForm1.CzyPat(ruch:string):boolean;
+var
+i,j,L:integer;
+PozycjaKrola:TPoint;
+begin
+
+L:=Length(PrzebiegPartii);
+
+if L>=10 then //sprawdzamy czy trzykrotne powtorzenie ruchow
+begin
+if (PrzebiegPartii[L-1].Z=PrzebiegPartii[L-3].NA) and (PrzebiegPartii[L-1].NA=PrzebiegPartii[L-3].Z) and //sprawdzamy dla pierwszego
+   (PrzebiegPartii[L-3].Z=PrzebiegPartii[L-5].NA) and (PrzebiegPartii[L-3].NA=PrzebiegPartii[L-5].Z) and
+   (PrzebiegPartii[L-5].Z=PrzebiegPartii[L-7].NA) and (PrzebiegPartii[L-5].NA=PrzebiegPartii[L-7].Z) and
+   (PrzebiegPartii[L-7].Z=PrzebiegPartii[L-9].NA) and (PrzebiegPartii[L-7].NA=PrzebiegPartii[L-9].Z) and
+
+   (PrzebiegPartii[L-2].Z=PrzebiegPartii[L-4].NA) and (PrzebiegPartii[L-2].NA=PrzebiegPartii[L-4].Z) and //sprawdzamy dla drugiego
+   (PrzebiegPartii[L-4].Z=PrzebiegPartii[L-6].NA) and (PrzebiegPartii[L-4].NA=PrzebiegPartii[L-6].Z) and
+   (PrzebiegPartii[L-6].Z=PrzebiegPartii[L-8].NA) and (PrzebiegPartii[L-6].NA=PrzebiegPartii[L-8].Z) and
+   (PrzebiegPartii[L-8].Z=PrzebiegPartii[L-10].NA) and (PrzebiegPartii[L-8].NA=PrzebiegPartii[L-10].Z) then
+   Exit (True); //jezeli trzykrotne powtorzenie ruchu przez kazdego gracza to remis
+
+end;
+
+for i:=1 to 8 do
+for j:=1 to 8 do
+begin
+    if (Board[i,j]<>nil) then
+    begin
+         if Board[i,j].kolor=ruch then
+         begin
+              if Length(MozliweRuchy(DaneBoard[i,j].pole))>0 then
+              Exit (False);
+         end;
+    end;
+end;
+
+Result:=True;
+
+
+end;
+
+
+function TForm1.ZostalTylkoKrol(kolor:string):boolean;
+var
+i,j:integer;
+begin
+for i:=1 to 8 do
+for j:=1 to 8 do
+begin
+    if Board[i,j]<>nil then
+    begin
+         if Board[i,j].kolor=kolor then
+         begin
+              if (Board[i,j].rodzaj<> 'krol') then
+              begin
+                  Exit (False);
+              end;
+         end;
+    end;
+end;
+
+Result:=True;
+
+end;
+
+
+function TForm1.CzyRemis:boolean;
+var
+i,j:integer;
+JestGoniec,JestSkoczek:boolean;
+kolor:string;
+ruchy:TMapaRuchow;
+begin
+
+//najpierw sprawdzimy czy zostaly odpowiednie bierki
+
+//tylko krole
+
+if (ZostalTylkoKrol('biale') and ZostalTylkoKrol('czarne')) then
+Exit (True);
+
+
+//sprawdzamy biale
+for i:=1 to 8 do
+for j:=1 to 8 do
+begin
+if (Board[i,j]<>nil) and (Board[i,j].kolor='biale') and (Board[i,j].rodzaj<> 'krol') then
+begin
+    if (Board[i,j].rodzaj='pion') then //jezeli pion to czy moze sie ruszyc
+    begin
+        if Board[i-1,j]=nil then
+        begin
+        Exit (False);
+        end
+        else
+        begin
+            if (Board[i-1,j].rodzaj<>'pion') then
+            Exit (False);
+        end;
+    end;
+
+    if (Board[i,j].rodzaj='wieza') or (Board[i,j].rodzaj='hetman') then
+    Exit (False);
+
+end;
+
+end;
+
+//sprawdzamy czy sa tylko dwa gonce
+
+JestGoniec:=false;
+
+for i:=1 to 8 do
+for j:=1 to 8 do
+begin
+if (Board[i,j]<>nil) and (Board[i,j].kolor='biale') and (Board[i,j].rodzaj<> 'krol') then
+begin
+    if Board[i,j].rodzaj='goniec' then
+    begin
+        if (JestGoniec=true) then begin
+        if DaneBoard[i,j].KolorPola<>kolor then
+        Exit (False);
+        end;
+
+        JestGoniec:=true;
+        kolor:=DaneBoard[i,j].KolorPola;
+    end;
+end;
+end;
+
+//sprawdzamy czy sa goniec i skoczek
+
+JestSkoczek:=false;
+JestGoniec:=false;
+
+for i:=1 to 8 do
+for j:=1 to 8 do
+begin
+if (Board[i,j]<>nil) and (Board[i,j].kolor='biale') and (Board[i,j].rodzaj<>'krol') then
+begin
+    if Board[i,j].rodzaj='skoczek' then
+    begin
+        if JestGoniec=true then
+        Exit (False);
+        JestGoniec:=true;
+    end;
+
+    if Board[i,j].rodzaj='goniec' then
+    begin
+        if JestSkoczek=true then
+        Exit (False);
+        JestSkoczek:=true;
+    end;
+end;
+end;
+
+
+//sprawdzamy czarne {wiem wiem, mozna to zrobic w jednej funkcji... }
+for i:=1 to 8 do
+for j:=1 to 8 do
+begin
+if (Board[i,j]<>nil) and (Board[i,j].kolor='czarne') and (Board[i,j].rodzaj<> 'krol') then
+begin
+    if (Board[i,j].rodzaj='pion') then //jezeli pion to czy moze sie ruszyc
+    begin
+        if Board[i-1,j]=nil then
+        begin
+        Exit (False);
+        end
+        else
+        begin
+            if (Board[i-1,j].rodzaj<>'pion') then
+            Exit (False);
+        end;
+    end;
+
+    if (Board[i,j].rodzaj='wieza') or (Board[i,j].rodzaj='hetman') then
+    Exit (False);
+
+end;
+
+end;
+
+//sprawdzamy czy sa tylko dwa gonce
+
+JestGoniec:=false;
+
+for i:=1 to 8 do
+for j:=1 to 8 do
+begin
+if (Board[i,j]<>nil) and (Board[i,j].kolor='czarne') and (Board[i,j].rodzaj<> 'krol') then
+begin
+    if Board[i,j].rodzaj='goniec' then
+    begin
+        if JestGoniec=true then
+        Exit (False);
+
+        JestGoniec:=true;
+    end;
+end;
+end;
+
+//sprawdzamy czy sa goniec i skoczek
+
+JestSkoczek:=false;
+JestGoniec:=false;
+
+for i:=1 to 8 do
+for j:=1 to 8 do
+begin
+if (Board[i,j]<>nil) and (Board[i,j].kolor='czarne') and (Board[i,j].rodzaj<>'krol') then
+begin
+    if Board[i,j].rodzaj='skoczek' then
+    begin
+        if JestGoniec=true then
+        Exit (False);
+        JestGoniec:=true;
+    end;
+
+    if Board[i,j].rodzaj='goniec' then
+    begin
+        if JestSkoczek=true then
+        Exit (False);
+        JestSkoczek:=true;
+    end;
+end;
+end;
+
+
+
+Result:=True;
+end;
 
 
 {--------------------------------------------------------------------------}
