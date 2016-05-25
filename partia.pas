@@ -209,7 +209,7 @@ begin
 Result:=Point(DaneBoard[i,j].X, DaneBoard[i,j].Y);
 end;
 
-function TForm1.ZnajdzIJbyPole(pole:string):TPoint;
+function TForm3.ZnajdzIJbyPole(pole:string):TPoint;
 var
 i,j:integer;
 begin
@@ -232,7 +232,7 @@ begin
 
 end;
 
-function TForm1.WykonajRuch(Z,Na,Uwagi:string):boolean;
+function TForm3.WykonajRuch(Z,Na,Uwagi:string):boolean;
 var
 a,b:TPoint;
 begin
@@ -257,7 +257,7 @@ PaintBox1.Invalidate;
 
 end;
 
-function TForm1.OdswiezPrzebieg:boolean;
+function TForm3.OdswiezPrzebieg:boolean;
 var
 i,j,licznik:integer;
 s:string;
@@ -290,7 +290,7 @@ end;
 
 end;
 
-function TForm1.ZapiszRuch(Z,Na,rodzaj,kolor,Uwagi:string):boolean;
+function TForm3.ZapiszRuch(Z,Na,rodzaj,kolor,Uwagi:string):boolean;
 begin
 
 SetLength(PrzebiegPartii, Length(PrzebiegPartii)+1);
@@ -342,7 +342,7 @@ result:=true;
 
 end;
 
-function TForm1.CzyLegalnyRuch(NaPole:string):boolean;
+function TForm3.CzyLegalnyRuch(NaPole:string):boolean;
 var
 i:integer;
 ok:boolean;
@@ -355,7 +355,7 @@ for i:=0 to Length(TablicaRuchow)-1 do
 Result:=ok;
 end;
 
-function TForm1.MozliweRuchy(WyjsciowePole:string):TMapaRuchow;
+function TForm3.MozliweRuchy(WyjsciowePole:string):TMapaRuchow;
 var
 ruchy:TMapaRuchow;
 pole:TPoint;
@@ -2022,7 +2022,7 @@ if bierka = 'krol' then
 
  end;     
  
- function TForm1.CzyCosBroniPole(pozycja,rodzaj,MojKolor:string;szachownica:Pointer):boolean;
+ function TForm3.CzyCosBroniPole(pozycja,rodzaj,MojKolor:string;szachownica:Pointer):boolean;
 var
 p:TPoint;
 i,j:integer;
@@ -2342,7 +2342,7 @@ end;
 end;
 
 
-function TForm1.CzyCosAtakujePole(pozycja,rodzaj,MojKolor:string;szachownica:Pointer):boolean;
+function TForm3.CzyCosAtakujePole(pozycja,rodzaj,MojKolor:string;szachownica:Pointer):boolean;
 var
 p:TPoint;
 i,j:integer;
@@ -2683,7 +2683,7 @@ end;
 
 end;
 
-function TForm1.KtoAtakujePole(p:TPoint; szachownica:Pointer):TTablicaPunktow;
+function TForm3.KtoAtakujePole(p:TPoint; szachownica:Pointer):TTablicaPunktow;
 var
 i,j:integer;
 wynik:array of TPoint;
@@ -3089,7 +3089,7 @@ end;
 
 end;
 
-function TForm1.CzySieRuszal(polozenie:TPoint):boolean;
+function TForm3.CzySieRuszal(polozenie:TPoint):boolean;
 var
 RuszalSie:boolean;
 rodzaj,kolor:string;
@@ -3108,7 +3108,7 @@ Result:=RuszalSie;  //jak false to sie nie ruszal
 
 end;
 
-function TForm1.SprawdzKrola(pole:TPoint; na:string):boolean; //true - nie atakowany, false - atakowany
+function TForm3.SprawdzKrola(pole:TPoint; na:string):boolean; //true - nie atakowany, false - atakowany
 var
 tmpBoard : array[1..8,1..8] of TBierka;
 tmp:TBierka;
@@ -3140,7 +3140,7 @@ end;
 
 end;
 
-function TForm1.CzyKrolMaGdzieUciec(K:TPoint):boolean;
+function TForm3.CzyKrolMaGdzieUciec(K:TPoint):boolean;
 var
 ma:boolean;
 MojKolor,KolorPrzeciwnika:string;
@@ -3270,7 +3270,7 @@ Result:=ma;
 end;
 
 
-function TForm1.CzyCosStanieNaPolu(pozycja,MojKolor:string;szachownica:Pointer):boolean;   //podrzedne
+function TForm3.CzyCosStanieNaPolu(pozycja,MojKolor:string;szachownica:Pointer):boolean;   //podrzedne
 var
 p,PozycjaKrola:TPoint;
 i,j:integer;
@@ -3623,7 +3623,7 @@ end;  end;
 
 end;
 
-function TForm1.CzyMoznaZaslonic(atakowany,atakujacy:TPoint):boolean;  //nadrzedne
+function TForm3.CzyMoznaZaslonic(atakowany,atakujacy:TPoint):boolean;  //nadrzedne
 var
 i,j:integer;
 CzyMozna,tmp:boolean;
@@ -3734,7 +3734,7 @@ end;
     Result:=CzyMozna;
 end;
 
-function TForm1.CzyMat(kolor:string):boolean;
+function TForm3.CzyMat(kolor:string):boolean;
 var
 PozycjaKrola:TPoint;
 i,j:integer;
@@ -3794,7 +3794,7 @@ begin
 Result:=nie;
 end;
 
-function TForm1.CzyPat(ruch:string):boolean;
+function TForm3.CzyPat(ruch:string):boolean;
 var
 i,j,L:integer;
 PozycjaKrola:TPoint;
@@ -3836,7 +3836,7 @@ Result:=True;
 end;
 
 
-function TForm1.ZostalTylkoKrol(kolor:string):boolean;
+function TForm3.ZostalTylkoKrol(kolor:string):boolean;
 var
 i,j:integer;
 begin
@@ -3860,7 +3860,7 @@ Result:=True;
 end;
 
 
-function TForm1.CzyRemis:boolean;
+function TForm3.CzyRemis:boolean;
 var
 i,j:integer;
 JestGoniec,JestSkoczek:boolean;
