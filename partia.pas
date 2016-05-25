@@ -1,6 +1,9 @@
 unit partia;
 
 {$mode objfpc}{$H+}
+//                                           007|19|biale|E4|cos|cos
+
+
 
 interface
 
